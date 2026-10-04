@@ -1,0 +1,16 @@
+{
+  "name": "ethio-pay-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Unified Payment SDK and Webhook Simulator for Ethiopian payment providers",
+  "scripts": {
+    "build": "pnpm --recursive run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --ext .ts"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
