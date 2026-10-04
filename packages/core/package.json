@@ -2,6 +2,7 @@
   "name": "@ethio-pay/core",
   "version": "0.1.0",
   "description": "Core interfaces, types, and client for Ethio-Pay SDK",
+  "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
