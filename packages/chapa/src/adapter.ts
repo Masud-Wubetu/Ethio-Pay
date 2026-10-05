@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import {
   HttpClient,
   PaymentError,
@@ -8,6 +9,7 @@ import {
   type PaymentSession,
   type PaymentStatus,
   type PaymentEvent,
+  type PaymentEventType,
   type WebhookHeaders,
 } from '@ethio-pay/core';
 
@@ -175,11 +177,104 @@ export class ChapaAdapter implements PaymentProvider {
     }
   }
 
-  public verifyWebhook(_rawBody: string, _headers: WebhookHeaders): void {
-    throw new Error('Not implemented yet');
+  public verifyWebhook(rawBody: string, headers: WebhookHeaders): void {
+    if (!rawBody) {
+      throw new PaymentError({
+        code: PaymentErrorCode.VALIDATION_ERROR,
+        message: 'Raw body is required for webhook signature verification',
+        provider: 'chapa',
+      });
+    }
+
+    const keyToUse = this.secretHash || this.secretKey;
+    if (!keyToUse) {
+      throw new PaymentError({
+        code: PaymentErrorCode.INVALID_CREDENTIALS,
+        message: 'Chapa secretHash or secretKey is required to verify webhooks',
+        provider: 'chapa',
+      });
+    }
+
+    let signatureHeader: string | undefined;
+    for (const [key, value] of Object.entries(headers)) {
+      const lower = key.toLowerCase();
+      if (lower === 'x-chapa-signature' || lower === 'chapa-signature') {
+        signatureHeader = Array.isArray(value) ? value[0] : value;
+        break;
+      }
+    }
+
+    if (!signatureHeader) {
+      throw new PaymentError({
+        code: PaymentErrorCode.INVALID_SIGNATURE,
+        message: 'Missing webhook signature header (x-chapa-signature)',
+        provider: 'chapa',
+      });
+    }
+
+    const computedHash = createHmac('sha256', keyToUse).update(rawBody).digest('hex');
+
+    const expectedBuffer = Buffer.from(computedHash, 'utf-8');
+    const actualBuffer = Buffer.from(signatureHeader, 'utf-8');
+
+    if (
+      expectedBuffer.length !== actualBuffer.length ||
+      !timingSafeEqual(expectedBuffer, actualBuffer)
+    ) {
+      throw new PaymentError({
+        code: PaymentErrorCode.INVALID_SIGNATURE,
+        message: 'Invalid webhook signature',
+        provider: 'chapa',
+      });
+    }
   }
 
-  public parseWebhook(_rawBody: string, _headers?: WebhookHeaders): PaymentEvent {
-    throw new Error('Not implemented yet');
+  public parseWebhook(rawBody: string, _headers?: WebhookHeaders): PaymentEvent {
+    let payload: any;
+    try {
+      payload = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
+    } catch {
+      throw new PaymentError({
+        code: PaymentErrorCode.VALIDATION_ERROR,
+        message: 'Invalid JSON payload in webhook body',
+        provider: 'chapa',
+      });
+    }
+
+    const txRef = payload.tx_ref || payload.reference || payload.data?.tx_ref;
+    const rawStatus = (payload.status || payload.data?.status || 'success').toLowerCase();
+
+    let status: Status = Status.PENDING;
+    let type: PaymentEventType = 'payment.succeeded';
+
+    if (rawStatus === 'success' || rawStatus === 'succeeded') {
+      status = Status.SUCCEEDED;
+      type = 'payment.succeeded';
+    } else if (rawStatus === 'failed') {
+      status = Status.FAILED;
+      type = 'payment.failed';
+    } else if (rawStatus === 'expired') {
+      status = Status.EXPIRED;
+      type = 'payment.expired';
+    } else if (rawStatus === 'refunded') {
+      status = Status.REFUNDED;
+      type = 'payment.refunded';
+    }
+
+    return {
+      id: payload.reference || payload.id || txRef || 'unknown',
+      type,
+      provider: 'chapa',
+      reference: txRef || 'unknown',
+      amount: payload.amount
+        ? Number(payload.amount)
+        : payload.data?.amount
+        ? Number(payload.data.amount)
+        : 0,
+      currency: payload.currency || payload.data?.currency || 'ETB',
+      status,
+      occurredAt: payload.created_at || new Date().toISOString(),
+      raw: payload,
+    };
   }
 }
