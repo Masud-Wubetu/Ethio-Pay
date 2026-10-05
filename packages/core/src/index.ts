@@ -4,5 +4,6 @@ export * from './types/errors.js';
 export * from './types/models.js';
 export * from './types/provider.js';
 export * from './utils/http.js';
+export * from './utils/validation.js';
 
 export const SDK_VERSION = '0.1.0';
