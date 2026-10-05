@@ -114,8 +114,65 @@ export class ChapaAdapter implements PaymentProvider {
     }
   }
 
-  public async verify(_reference: string): Promise<PaymentStatus> {
-    throw new Error('Not implemented yet');
+  public async verify(reference: string): Promise<PaymentStatus> {
+    if (!reference || typeof reference !== 'string' || reference.trim() === '') {
+      throw new PaymentError({
+        code: PaymentErrorCode.VALIDATION_ERROR,
+        message: 'Transaction reference is required for verification',
+        provider: 'chapa',
+      });
+    }
+
+    try {
+      const response = await this.httpClient.request<{
+        status: string;
+        message: string;
+        data?: {
+          status?: string;
+          amount?: number | string;
+          currency?: string;
+          tx_ref?: string;
+          reference?: string;
+        };
+      }>(`/v1/transaction/verify/${encodeURIComponent(reference)}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+        },
+      });
+
+      const rawData = response.data.data;
+      const rawStatus = (rawData?.status || response.data.status || '').toLowerCase();
+
+      let status: Status = Status.PENDING;
+      if (rawStatus === 'success' || rawStatus === 'succeeded') {
+        status = Status.SUCCEEDED;
+      } else if (rawStatus === 'failed') {
+        status = Status.FAILED;
+      } else if (rawStatus === 'expired') {
+        status = Status.EXPIRED;
+      }
+
+      return {
+        id: rawData?.reference || reference,
+        provider: 'chapa',
+        reference: rawData?.tx_ref || reference,
+        status,
+        amount: rawData?.amount ? Number(rawData.amount) : 0,
+        currency: rawData?.currency || 'ETB',
+        raw: response.data,
+      };
+    } catch (err: unknown) {
+      if (err instanceof PaymentError) {
+        throw err;
+      }
+      throw new PaymentError({
+        code: PaymentErrorCode.PROVIDER_ERROR,
+        message: (err as Error).message || 'Chapa verification failed',
+        provider: 'chapa',
+        raw: err,
+      });
+    }
   }
 
   public verifyWebhook(_rawBody: string, _headers: WebhookHeaders): void {
