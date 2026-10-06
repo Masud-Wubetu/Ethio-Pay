@@ -15,6 +15,7 @@
     "express": "^4.19.2"
   },
   "devDependencies": {
+    "@ethio-pay/sandbox": "workspace:*",
     "@types/express": "^4.17.21",
     "tsup": "^8.0.2",
     "typescript": "^5.4.0"
