@@ -28,6 +28,7 @@ export interface WebhookLogRecord {
   headers: Record<string, string>;
   responseStatus?: number;
   responseBody?: string;
+  executionTimeMs?: number;
   timestamp: string;
 }
 
@@ -39,7 +40,8 @@ export interface SandboxServerOptions {
 }
 
 /**
- * Local Webhook Simulator & Mock Payment Provider Server with a State-of-the-Art Developer UI.
+ * Professional Local Webhook Simulator & Mock Payment Provider Server.
+ * Provides realistic Chapa & Telebirr checkout interfaces and an isolated Developer Dashboard.
  */
 export class SandboxServer {
   public app: Express;
@@ -69,6 +71,7 @@ export class SandboxServer {
     targetStatus: Status,
     options: { tamperSignature?: boolean; delayMs?: number; targetUrl?: string } = {}
   ): Promise<WebhookLogRecord> {
+    const startTime = Date.now();
     const tx = this.transactions.get(reference);
     if (tx) {
       tx.status = targetStatus;
@@ -87,6 +90,8 @@ export class SandboxServer {
       currency: tx?.currency || 'ETB',
       status: rawStatus,
       email: tx?.email || 'customer@example.com',
+      first_name: tx?.firstName || 'Abebe',
+      last_name: tx?.lastName || 'Bikila',
       created_at: new Date().toISOString(),
     };
 
@@ -94,7 +99,7 @@ export class SandboxServer {
     let signature = createHmac('sha256', this.secretHash).update(rawBody).digest('hex');
 
     if (options.tamperSignature) {
-      signature = 'tampered_bad_signature_hash_123';
+      signature = 'tampered_forged_invalid_signature_hash_123';
     }
 
     if (options.delayMs && options.delayMs > 0) {
@@ -122,6 +127,8 @@ export class SandboxServer {
       responseBody = err.message || 'Webhook dispatch network failure';
     }
 
+    const executionTimeMs = Date.now() - startTime;
+
     const logRecord: WebhookLogRecord = {
       id: `wh_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       reference,
@@ -131,6 +138,7 @@ export class SandboxServer {
       headers,
       responseStatus,
       responseBody,
+      executionTimeMs,
       timestamp: new Date().toISOString(),
     };
 
@@ -231,7 +239,9 @@ export class SandboxServer {
       });
     });
 
-    // Ultra-Premium Glassmorphic Checkout Dashboard UI (SBX-4)
+    // ------------------------------------------------------------------------
+    // 1. REALISTIC CUSTOMER-FACING CHECKOUT UI (/checkout/:ref)
+    // ------------------------------------------------------------------------
     this.app.get('/checkout/:ref', (req: Request, res: Response) => {
       const ref = req.params.ref;
       const tx = this.transactions.get(ref);
@@ -242,390 +252,493 @@ export class SandboxServer {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ethio-Pay Developer Simulator</title>
+  <title>Pay with ${this.provider.toUpperCase()} (Test Mode)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg-dark: #070a12;
-      --card-bg: rgba(18, 26, 44, 0.75);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --primary: #38bdf8;
-      --emerald: #10b981;
-      --emerald-glow: rgba(16, 185, 129, 0.25);
-      --rose: #f43f5e;
-      --rose-glow: rgba(244, 63, 94, 0.25);
-      --amber: #f59e0b;
-      --slate: #475569;
-    }
-
     * { box-sizing: border-box; }
     body {
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 50% 0%, #111a2e 0%, var(--bg-dark) 70%);
-      color: var(--text-main);
+      background: #0b0f19;
+      color: #f8fafc;
       min-height: 100vh;
       margin: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .test-banner {
+      background: #f59e0b;
+      color: #000;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-align: center;
+      padding: 8px 16px;
+    }
+    .checkout-wrapper {
+      flex: 1;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 24px;
     }
-
-    .container {
-      width: 100%;
-      max-width: 520px;
-      perspective: 1000px;
-    }
-
     .card {
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--card-border);
+      background: #151d30;
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 24px;
       padding: 32px;
-      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
     }
-
-    .header {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-
-    .provider-pill {
-      display: inline-flex;
+    .brand-row {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
-      padding: 6px 16px;
-      border-radius: 9999px;
+      margin-bottom: 24px;
+    }
+    .brand-name { font-size: 22px; font-weight: 800; color: #38bdf8; letter-spacing: -0.02em; }
+    .amount-box { text-align: center; background: rgba(10, 16, 28, 0.6); border-radius: 16px; padding: 20px; margin-bottom: 24px; border: 1px solid rgba(255, 255, 255, 0.05); }
+    .amount-val { font-size: 38px; font-weight: 800; color: #ffffff; }
+    .amount-cur { font-size: 16px; color: #38bdf8; font-weight: 700; margin-left: 4px; }
+    .ref-code { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #94a3b8; margin-top: 6px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; }
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #090d16;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      color: white;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .form-input:focus { outline: none; border-color: #38bdf8; }
+
+    .test-helper {
+      font-size: 12px;
+      color: #38bdf8;
       background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      color: var(--primary);
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-
-    .flag-accent {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 8px #10b981;
-    }
-
-    h1 {
-      font-size: 24px;
-      font-weight: 800;
-      margin: 0 0 6px 0;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .subtitle {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
-    .summary-box {
-      background: rgba(10, 16, 28, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 24px;
-    }
-
-    .amount-row {
-      text-align: center;
-      margin-bottom: 16px;
-      padding-bottom: 16px;
-      border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-    }
-
-    .amount-number {
-      font-size: 36px;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: -0.03em;
-    }
-
-    .amount-currency {
-      font-size: 16px;
-      color: var(--primary);
-      font-weight: 700;
-      margin-left: 4px;
-    }
-
-    .info-grid {
-      display: grid;
-      gap: 12px;
-      font-size: 13px;
-    }
-
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .info-label { color: var(--text-muted); }
-    .info-val { font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #f1f5f9; }
-
-    .status-tag {
-      padding: 3px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .status-PENDING { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
-    .status-SUCCEEDED { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .status-FAILED { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
-
-    .section-title {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-    }
-
-    .controls-grid {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 24px;
-      background: rgba(10, 16, 28, 0.4);
-      padding: 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .toggle-label {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13px;
-      color: #cbd5e1;
+      border: 1px dashed rgba(56, 189, 248, 0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 20px;
       cursor: pointer;
-      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
+    .test-helper:hover { background: rgba(56, 189, 248, 0.2); }
 
-    .toggle-label input { accent-color: var(--primary); width: 16px; height: 16px; cursor: pointer; }
-
-    .actions-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .btn {
-      position: relative;
-      padding: 14px 18px;
+    .btn-pay {
+      width: 100%;
+      padding: 16px;
       border: none;
       border-radius: 12px;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 700;
-      color: white;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    .btn:active { transform: translateY(0); }
-
-    .btn-success {
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      box-shadow: 0 6px 20px var(--emerald-glow);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+      transition: all 0.2s;
     }
-    .btn-failed {
-      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-      box-shadow: 0 6px 20px var(--rose-glow);
-    }
-    .btn-cancel {
-      background: linear-gradient(135deg, #475569 0%, #334155 100%);
-    }
-    .btn-expire {
-      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-    }
+    .btn-pay:hover { opacity: 0.95; transform: translateY(-1px); }
+    .btn-cancel { width: 100%; background: transparent; border: none; color: #94a3b8; padding: 12px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .btn-cancel:hover { color: white; }
 
-    .console-card {
-      margin-top: 24px;
-      background: #040711;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 16px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
+    /* PIN Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
       display: none;
-    }
-
-    .console-header {
-      display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      color: var(--text-muted);
-      font-size: 11px;
+      z-index: 100;
     }
-
-    .status-badge-200 { color: #34d399; font-weight: 700; }
-    .status-badge-400 { color: #fb7185; font-weight: 700; }
-
-    #console-body {
-      white-space: pre-wrap;
-      word-break: break-all;
-      color: #e2e8f0;
-      line-height: 1.5;
+    .modal-card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 32px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
     }
+    .pin-input { font-size: 28px; letter-spacing: 12px; text-align: center; width: 180px; padding: 10px; background: #0f172a; border: 1px solid #38bdf8; border-radius: 10px; color: white; margin: 20px 0; }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="test-banner">⚠️ TEST MODE — Simulated Payment (No Real Money Charged)</div>
+
+  <div class="checkout-wrapper">
     <div class="card">
-      <div class="header">
-        <div class="provider-pill">
-          <span class="flag-accent"></span>
-          ${this.provider} Webhook Simulator
-        </div>
-        <h1>Developer Checkout</h1>
-        <p class="subtitle">Test live signed webhooks locally on your machine</p>
+      <div class="brand-row">
+        <span class="brand-name">${this.provider.toUpperCase()} CHECKOUT</span>
+        <span style="font-size: 12px; color: #94a3b8;">Hosted Gateway</span>
       </div>
 
       ${
         tx
           ? `
-        <div class="summary-box">
-          <div class="amount-row">
-            <span class="amount-number">${tx.amount.toLocaleString()}</span>
-            <span class="amount-currency">${tx.currency}</span>
-          </div>
-          <div class="info-grid">
-            <div class="info-row">
-              <span class="info-label">Reference</span>
-              <span class="info-val">${tx.reference}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Customer</span>
-              <span class="info-val">${tx.email || 'customer@example.com'}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Payment Status</span>
-              <span class="status-tag status-${tx.status}">${tx.status}</span>
-            </div>
-          </div>
+        <div class="amount-box">
+          <div><span class="amount-val">${tx.amount.toLocaleString()}</span><span class="amount-cur">${tx.currency}</span></div>
+          <div class="ref-code">Ref: ${tx.reference}</div>
         </div>
+
+        <div class="test-helper" onclick="autofillTest()">
+          <span>💡 Autofill Test Telebirr Credentials</span>
+          <strong>0911000000</strong>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Phone Number / Account Email</label>
+          <input type="text" id="account" class="form-input" value="${tx.phone || tx.email || '0911234567'}">
+        </div>
+
+        <button class="btn-pay" onclick="openPinModal()">Pay ${tx.amount} ${tx.currency}</button>
+        <button class="btn-cancel" onclick="cancelPayment()">Cancel and Return to Store</button>
       `
-          : `<div class="summary-box" style="color: #fb7185; text-align: center;">Transaction reference '${ref}' not found</div>`
+          : `<div style="color: #fb7185; text-align: center;">Transaction reference '${ref}' not found</div>`
       }
+    </div>
+  </div>
 
-      <div class="section-title">Attack & Failure Simulation</div>
-      <div class="controls-grid">
-        <label class="toggle-label">
-          <span>🛡️ Tamper HMAC Signature (HMAC Forgery Test)</span>
-          <input type="checkbox" id="tamper">
-        </label>
-        <label class="toggle-label">
-          <span>⏱️ Network Latency (3 Seconds Delay)</span>
-          <input type="checkbox" id="delay">
-        </label>
-      </div>
-
-      <div class="section-title">Trigger Action</div>
-      <div class="actions-grid">
-        <button class="btn btn-success" onclick="triggerAction('SUCCEEDED')">
-          ⚡ Pay Success
-        </button>
-        <button class="btn btn-failed" onclick="triggerAction('FAILED')">
-          💥 Pay Failed
-        </button>
-        <button class="btn btn-cancel" onclick="triggerAction('FAILED')">
-          🚫 Cancel Order
-        </button>
-        <button class="btn btn-expire" onclick="triggerAction('EXPIRED')">
-          ⌛ Let Expire
-        </button>
-      </div>
-
-      <div class="console-card" id="console">
-        <div class="console-header">
-          <span>REAL-TIME WEBHOOK LOG</span>
-          <span id="console-timestamp"></span>
-        </div>
-        <div id="console-body">Dispatching signed webhook request...</div>
-      </div>
+  <div class="modal-overlay" id="pin-modal">
+    <div class="modal-card">
+      <h3 style="margin-top:0;">Enter Test PIN / OTP</h3>
+      <p style="font-size: 13px; color: #94a3b8;">Enter <strong>123456</strong> to complete test authorization</p>
+      <input type="password" id="pin" class="pin-input" maxlength="6" value="123456">
+      <br>
+      <button class="btn-pay" onclick="confirmPayment()">Confirm Payment</button>
     </div>
   </div>
 
   <script>
-    async function triggerAction(status) {
-      const consoleBox = document.getElementById('console');
-      const consoleBody = document.getElementById('console-body');
-      const consoleTime = document.getElementById('console-timestamp');
-      const tamper = document.getElementById('tamper').checked;
-      const delay = document.getElementById('delay').checked;
-
-      consoleBox.style.display = 'block';
-      consoleTime.innerText = new Date().toLocaleTimeString();
-      consoleBody.innerHTML = '<span style="color: #38bdf8;">⏳ Dispatching HMAC-SHA256 signed webhook to target server...</span>';
+    function autofillTest() {
+      document.getElementById('account').value = '0911000000';
+    }
+    function openPinModal() {
+      document.getElementById('pin-modal').style.display = 'flex';
+    }
+    async function confirmPayment() {
+      const pinModal = document.getElementById('pin-modal');
+      pinModal.innerHTML = '<div class="modal-card"><h3 style="color: #38bdf8;">Processing Payment...</h3><p>Dispatching signed webhook...</p></div>';
 
       try {
         const res = await fetch('/api/trigger-action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            reference: '${ref}',
-            status: status,
-            tamperSignature: tamper,
-            delayMs: delay ? 3000 : 0
-          })
+          body: JSON.stringify({ reference: '${ref}', status: 'SUCCEEDED' })
         });
-
-        const data = await res.json();
         if (res.ok) {
-          const isSuccess = data.responseStatus >= 200 && data.responseStatus < 300;
-          const statusClass = isSuccess ? 'status-badge-200' : 'status-badge-400';
-          
-          consoleBody.innerHTML = 
-            '<strong>HTTP POST Delivery Result:</strong>\\n' +
-            '• Target Response Status: <span class="' + statusClass + '">' + data.responseStatus + ' ' + (isSuccess ? 'OK' : 'ERROR') + '</span>\\n' +
-            '• Log ID: <span style="color: #94a3b8;">' + data.logId + '</span>\\n' +
-            '• Tamper Attack: ' + (tamper ? '<span style="color:#fb7185;">ACTIVE</span>' : '<span style="color:#34d399;">DISABLED</span>') + '\\n\\n' +
-            '<span style="color: #94a3b8;">Redirecting to return URL...</span>';
-
+          pinModal.innerHTML = '<div class="modal-card"><h3 style="color: #34d399;">✓ Payment Authorized!</h3><p>Redirecting back to store...</p></div>';
           if ('${tx?.returnUrl || ''}') {
-            setTimeout(() => window.location.href = '${tx?.returnUrl}', 1800);
+            setTimeout(() => window.location.href = '${tx?.returnUrl}', 1200);
           }
-        } else {
-          consoleBody.innerHTML = '<span style="color: #fb7185;">❌ Error: ' + data.message + '</span>';
         }
       } catch (err) {
-        consoleBody.innerHTML = '<span style="color: #fb7185;">❌ Network error delivering webhook</span>';
+        alert('Payment processing error');
       }
+    }
+    async function cancelPayment() {
+      await fetch('/api/trigger-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: '${ref}', status: 'FAILED' })
+      });
+      if ('${tx?.returnUrl || ''}') {
+        window.location.href = '${tx?.returnUrl}';
+      }
+    }
+  </script>
+</body>
+</html>
+      `;
+      return res.send(html);
+    });
+
+    // ------------------------------------------------------------------------
+    // 2. ISOLATED DEVELOPER SIMULATOR DASHBOARD (http://localhost:4040/)
+    // ------------------------------------------------------------------------
+    this.app.get('/', (_req: Request, res: Response) => {
+      const transactionsList = Array.from(this.transactions.values());
+
+      const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ethio-Pay Developer Simulator Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070a12;
+      --card-bg: #121929;
+      --border: rgba(255, 255, 255, 0.08);
+      --primary: #38bdf8;
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 260px;
+      background: #0d1322;
+      border-right: 1px solid var(--border);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-header {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .brand-icon { width: 12px; height: 12px; border-radius: 50%; background: var(--emerald); box-shadow: 0 0 10px var(--emerald); }
+
+    .nav-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-item:hover, .nav-item.active { background: rgba(56, 189, 248, 0.1); color: var(--primary); }
+
+    /* Main Content */
+    .main { flex: 1; padding: 32px; overflow-y: auto; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+    .page-title { font-size: 24px; font-weight: 800; margin: 0; }
+    .target-badge { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); padding: 8px 16px; border-radius: 999px; color: var(--primary); }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .stat-val { font-size: 28px; font-weight: 800; color: white; margin-top: 6px; }
+    .stat-lbl { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .card-title { font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 14px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-family: 'JetBrains Mono', monospace; }
+
+    .badge-status { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge-SUCCEEDED, .badge-200 { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
+    .badge-PENDING { background: rgba(56, 189, 248, 0.15); color: var(--primary); }
+    .badge-FAILED, .badge-500, .badge-400 { background: rgba(244, 63, 94, 0.15); color: var(--rose); }
+
+    .btn-action { padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+    .btn-action:hover { opacity: 0.85; }
+    .btn-trigger { background: var(--emerald); color: white; }
+    .btn-replay { background: var(--primary); color: #000; }
+
+    .form-field { margin-bottom: 16px; }
+    .form-field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+    .form-field input[type="text"] { width: 100%; padding: 10px 12px; background: #090d16; border: 1px solid var(--border); border-radius: 8px; color: white; font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="brand-header">
+      <span class="brand-icon"></span>
+      ethio-pay SDK
+    </div>
+    <ul class="nav-list">
+      <li class="nav-item active">📊 Developer Dashboard</li>
+      <li class="nav-item">💳 Active Transactions (${transactionsList.length})</li>
+      <li class="nav-item">📜 Webhook Logs (${this.webhookLogs.length})</li>
+      <li class="nav-item">🛡️ Security Attack Lab</li>
+    </ul>
+  </div>
+
+  <div class="main">
+    <div class="top-bar">
+      <div>
+        <h1 class="page-title">Developer Webhook Simulator</h1>
+        <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">Gateway: <strong>${this.provider.toUpperCase()}</strong> | Secret: <code>${this.secretHash}</code></div>
+      </div>
+      <div class="target-badge">Webhook Target: ${this.targetUrl}</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-lbl">Active Transactions</div>
+        <div class="stat-val">${transactionsList.length}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Webhooks Dispatched</div>
+        <div class="stat-val">${this.webhookLogs.length}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Delivery Success Rate</div>
+        <div class="stat-val" style="color: var(--emerald);">
+          ${this.webhookLogs.length > 0 ? Math.round((this.webhookLogs.filter((l) => l.responseStatus === 200).length / this.webhookLogs.length) * 100) : 100}%
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Simulator Port</div>
+        <div class="stat-val" style="color: var(--primary);">${this.port}</div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div class="card">
+        <div class="card-title">
+          <span>Active Transactions</span>
+          <span style="font-size: 12px; color: var(--muted);">SDK Initialized Orders</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Simulate Webhook</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              transactionsList.length > 0
+                ? transactionsList
+                    .map(
+                      (tx) => `
+              <tr>
+                <td><strong>${tx.reference}</strong></td>
+                <td>${tx.amount} ${tx.currency}</td>
+                <td><span class="badge-status badge-${tx.status}">${tx.status}</span></td>
+                <td>
+                  <button class="btn-action btn-trigger" onclick="triggerManual('${tx.reference}', 'SUCCEEDED')">⚡ Send Success Webhook</button>
+                </td>
+              </tr>
+            `
+                    )
+                    .join('')
+                : `<tr><td colspan="4" style="color: var(--muted); text-align: center; padding: 24px;">No transactions initialized yet. Initialize a payment from your app to test.</td></tr>`
+            }
+          </tbody>
+        </table>
+
+        <div class="card-title" style="margin-top: 32px;">
+          <span>Live Webhook Log Inspector</span>
+          <span style="font-size: 12px; color: var(--muted);">Recent Delivery Attempts</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Reference</th>
+              <th>HTTP Code</th>
+              <th>Replay</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              this.webhookLogs.length > 0
+                ? this.webhookLogs
+                    .slice(0, 5)
+                    .map(
+                      (log) => `
+              <tr>
+                <td>${new Date(log.timestamp).toLocaleTimeString()}</td>
+                <td>${log.reference}</td>
+                <td><span class="badge-status badge-${log.responseStatus}">${log.responseStatus}</span></td>
+                <td>
+                  <button class="btn-action btn-replay" onclick="replayLog('${log.id}')">🔄 Replay</button>
+                </td>
+              </tr>
+            `
+                    )
+                    .join('')
+                : `<tr><td colspan="4" style="color: var(--muted); text-align: center; padding: 24px;">No webhooks dispatched yet.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Security Attack Lab</div>
+        <p style="font-size: 13px; color: var(--muted);">Test how your merchant application reacts to forged signatures and edge-case attacks.</p>
+
+        <div class="form-field">
+          <label>Target Reference</label>
+          <input type="text" id="attack-ref" placeholder="e.g. MANUAL-ORDER-999">
+        </div>
+
+        <div class="form-field">
+          <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="tamper"> Forged HMAC Signature (MITM Attack)
+          </label>
+        </div>
+
+        <button class="btn-action btn-trigger" style="width: 100%; padding: 12px; font-size: 14px;" onclick="triggerAttack()">
+          🚀 Dispatch Attack Webhook
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function triggerManual(ref, status) {
+      await fetch('/api/trigger-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: ref, status: status })
+      });
+      window.location.reload();
+    }
+
+    async function replayLog(id) {
+      const res = await fetch('/api/logs/' + id + '/replay', { method: 'POST' });
+      const data = await res.json();
+      alert('Webhook replayed! HTTP Response: ' + data.log.responseStatus);
+      window.location.reload();
+    }
+
+    async function triggerAttack() {
+      const ref = document.getElementById('attack-ref').value || 'ATTACK-REF-1';
+      const tamper = document.getElementById('tamper').checked;
+      const res = await fetch('/api/trigger-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: ref, status: 'SUCCEEDED', tamperSignature: tamper })
+      });
+      const data = await res.json();
+      alert('Attack webhook dispatched! Target Response HTTP: ' + data.responseStatus);
+      window.location.reload();
     }
   </script>
 </body>
