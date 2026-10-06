@@ -1,0 +1,25 @@
+{
+  "name": "@ethio-pay/example-express",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "start": "node dist/server.js",
+    "build": "tsup src/server.ts --format esm",
+    "dev": "tsup src/server.ts --format esm --watch"
+  },
+  "dependencies": {
+    "@ethio-pay/chapa": "workspace:*",
+    "@ethio-pay/core": "workspace:*",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
