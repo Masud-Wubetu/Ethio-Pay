@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "description": "Local webhook simulator and payment provider sandbox for Ethio-Pay",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
     "ethio-pay-sandbox": "./dist/cli.js"
@@ -12,8 +12,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
