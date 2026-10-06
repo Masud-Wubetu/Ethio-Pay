@@ -42,11 +42,20 @@ export function createIdempotencyMiddleware(
 ) {
   return async (req: any, res: any, next: any) => {
     try {
-      const key =
-        (req.headers && req.headers['x-idempotency-key']) ||
-        req.body?.tx_ref ||
-        req.body?.reference ||
-        req.body?.data?.tx_ref;
+      let key = req.headers && req.headers['x-idempotency-key'];
+
+      if (!key) {
+        if (typeof req.body === 'object' && req.body !== null) {
+          key = req.body.tx_ref || req.body.reference || req.body.data?.tx_ref;
+        } else if (typeof req.body === 'string') {
+          try {
+            const parsed = JSON.parse(req.body);
+            key = parsed.tx_ref || parsed.reference || parsed.data?.tx_ref;
+          } catch {
+            // ignore
+          }
+        }
+      }
 
       if (!key || typeof key !== 'string') {
         return next();
