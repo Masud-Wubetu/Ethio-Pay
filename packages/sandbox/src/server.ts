@@ -471,12 +471,13 @@ export class SandboxServer {
     // 2. ISOLATED DEVELOPER SIMULATOR DASHBOARD (http://localhost:4040/)
     // Serve Next.js static build if available, or fall back to inline HTML
     // ------------------------------------------------------------------------
-    const dashboardOutDir = path.resolve(__dirname, '../../dashboard/out');
+    const currentDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
+    const dashboardOutDir = path.resolve(currentDir, '../../dashboard/out');
     const fallbackDashboardOutDir = path.resolve(process.cwd(), 'packages/dashboard/out');
-    const staticDir = fs.existsSync(dashboardOutDir)
-      ? dashboardOutDir
-      : fs.existsSync(fallbackDashboardOutDir)
+    const staticDir = fs.existsSync(fallbackDashboardOutDir)
       ? fallbackDashboardOutDir
+      : fs.existsSync(dashboardOutDir)
+      ? dashboardOutDir
       : null;
 
     if (staticDir) {
