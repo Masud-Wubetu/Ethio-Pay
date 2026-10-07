@@ -432,7 +432,7 @@ export class SandboxServer {
     }
     async function confirmPayment() {
       const pinModal = document.getElementById('pin-modal');
-      pinModal.innerHTML = '<div class="modal-card"><h3 style="color: #38bdf8;">Processing Payment...</h3><p>Dispatching signed webhook...</p></div>';
+      pinModal.innerHTML = '<div class="modal-card"><h3 style="color: #38bdf8; margin-top:0;">Processing Payment...</h3><p style="color:#94a3b8; font-size:13px;">Dispatching signed webhook...</p></div>';
 
       try {
         const res = await fetch('/api/trigger-action', {
@@ -441,10 +441,9 @@ export class SandboxServer {
           body: JSON.stringify({ reference: '${ref}', status: 'SUCCEEDED' })
         });
         if (res.ok) {
-          pinModal.innerHTML = '<div class="modal-card"><h3 style="color: #34d399;">✓ Payment Authorized!</h3><p>Redirecting back to store...</p></div>';
-          if ('${tx?.returnUrl || ''}') {
-            setTimeout(() => window.location.href = '${tx?.returnUrl}', 1200);
-          }
+          const target = '${tx?.returnUrl || '/'}';
+          pinModal.innerHTML = '<div class="modal-card"><h3 style="color: #34d399; font-size: 20px; font-weight: 800; margin-top: 0;">✓ Payment Authorized!</h3><p style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;">Signed webhook dispatched to merchant app</p><button class="btn-pay" onclick="window.location.href=\'' + target + '\'">Return to Merchant / Console &rarr;</button></div>';
+          setTimeout(function() { window.location.href = target; }, 1500);
         }
       } catch (err) {
         alert('Payment processing error');
@@ -456,9 +455,7 @@ export class SandboxServer {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reference: '${ref}', status: 'FAILED' })
       });
-      if ('${tx?.returnUrl || ''}') {
-        window.location.href = '${tx?.returnUrl}';
-      }
+      window.location.href = '${tx?.returnUrl || '/'}';
     }
   </script>
 </body>
