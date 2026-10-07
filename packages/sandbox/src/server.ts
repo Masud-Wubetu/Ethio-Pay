@@ -1,7 +1,10 @@
 import express, { type Express, type Request, type Response } from 'express';
 import cors from 'cors';
 import { createHmac } from 'node:crypto';
+import path from 'node:path';
+import fs from 'node:fs';
 import type { Status } from '@ethio-pay/core';
+
 
 export interface TransactionRecord {
   reference: string;
@@ -466,8 +469,25 @@ export class SandboxServer {
 
     // ------------------------------------------------------------------------
     // 2. ISOLATED DEVELOPER SIMULATOR DASHBOARD (http://localhost:4040/)
+    // Serve Next.js static build if available, or fall back to inline HTML
     // ------------------------------------------------------------------------
+    const dashboardOutDir = path.resolve(__dirname, '../../dashboard/out');
+    const fallbackDashboardOutDir = path.resolve(process.cwd(), 'packages/dashboard/out');
+    const staticDir = fs.existsSync(dashboardOutDir)
+      ? dashboardOutDir
+      : fs.existsSync(fallbackDashboardOutDir)
+      ? fallbackDashboardOutDir
+      : null;
+
+    if (staticDir) {
+      this.app.use(express.static(staticDir));
+    }
+
     this.app.get('/', (_req: Request, res: Response) => {
+      if (staticDir && fs.existsSync(path.join(staticDir, 'index.html'))) {
+        return res.sendFile(path.join(staticDir, 'index.html'));
+      }
+
       const transactionsList = Array.from(this.transactions.values());
 
       const html = `
@@ -774,6 +794,11 @@ export class SandboxServer {
     // Webhook Request Log Endpoint (SBX-7)
     this.app.get('/api/logs', (_req: Request, res: Response) => {
       return res.json({ status: 'success', logs: this.webhookLogs });
+    });
+
+    // Active Transactions Endpoint (SBX-12)
+    this.app.get('/api/transactions', (_req: Request, res: Response) => {
+      return res.json({ status: 'success', transactions: Array.from(this.transactions.values()) });
     });
 
     // Replay Logged Webhook Endpoint (SBX-8)
