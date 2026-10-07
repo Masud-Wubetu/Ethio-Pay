@@ -76,12 +76,23 @@ export default function DashboardHome() {
   // Scenario Lab states
   const [scenarioStatus, setScenarioStatus] = useState<string | null>(null);
 
+  // Base API URL helper: automatically targets port 4040 if running on port 3000 Next.js dev server
+  const getApiBase = () => {
+    if (typeof window !== 'undefined') {
+      if (window.location.port === '3000' || window.location.port === '3001') {
+        return 'http://localhost:4040';
+      }
+    }
+    return '';
+  };
+
   const fetchDashboardData = async () => {
     setIsRefreshing(true);
+    const apiBase = getApiBase();
     try {
       const [logsRes, txRes] = await Promise.all([
-        fetch('/api/logs').catch(() => null),
-        fetch('/api/transactions').catch(() => null),
+        fetch(`${apiBase}/api/logs`).catch(() => null),
+        fetch(`${apiBase}/api/transactions`).catch(() => null),
       ]);
       if (logsRes && logsRes.ok) {
         const data = await logsRes.json();
@@ -105,9 +116,10 @@ export default function DashboardHome() {
   }, []);
 
   const handleCreateTestPayment = async () => {
+    const apiBase = getApiBase();
     try {
       const refToUse = newRef || `ORDER_${Math.floor(10000 + Math.random() * 90000)}`;
-      const res = await fetch('/v1/transaction/initialize', {
+      const res = await fetch(`${apiBase}/v1/transaction/initialize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -139,8 +151,9 @@ export default function DashboardHome() {
   };
 
   const handleTriggerWebhook = async (overrideRef?: string, overrideStatus?: string, overrideTamper?: boolean, overrideDelay?: number) => {
+    const apiBase = getApiBase();
     try {
-      const res = await fetch('/api/trigger-action', {
+      const res = await fetch(`${apiBase}/api/trigger-action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -165,8 +178,9 @@ export default function DashboardHome() {
   };
 
   const handleReplayLog = async (id: string) => {
+    const apiBase = getApiBase();
     try {
-      const res = await fetch(`/api/logs/${id}/replay`, { method: 'POST' });
+      const res = await fetch(`${apiBase}/api/logs/${id}/replay`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         alert(`Webhook Replayed! Response HTTP Status: ${data.log?.responseStatus || 200}`);
@@ -178,12 +192,10 @@ export default function DashboardHome() {
   };
 
   const handleOpenFakeCheckout = () => {
+    const apiBase = getApiBase();
     const latestTx = transactions[0];
-    if (latestTx) {
-      window.open(`/checkout/${latestTx.reference}`, '_blank');
-    } else {
-      window.open('/checkout/ORDER_99182', '_blank');
-    }
+    const checkoutRef = latestTx ? latestTx.reference : 'ORDER_99182';
+    window.open(`${apiBase}/checkout/${checkoutRef}`, '_blank');
   };
 
   // Metrics calculations
@@ -536,7 +548,7 @@ export default function DashboardHome() {
                         </td>
                         <td className="p-4 flex gap-2">
                           <button
-                            onClick={() => window.open(`/checkout/${tx.reference}`, '_blank')}
+                            onClick={() => window.open(`${getApiBase()}/checkout/${tx.reference}`, '_blank')}
                             className="px-2.5 py-1 rounded bg-[#1f232b] text-white hover:bg-[#282e39]"
                           >
                             Checkout
