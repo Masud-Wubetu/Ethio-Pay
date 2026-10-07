@@ -143,10 +143,11 @@ export default function DashboardHome() {
           window.open(data.data.checkout_url, '_blank');
         }
       } else {
-        alert('Failed to initialize test payment');
+        const errData = await res.json().catch(() => null);
+        alert(`Failed to initialize payment (HTTP ${res.status}): ${errData?.message || 'Server error'}`);
       }
-    } catch {
-      alert('Error creating payment');
+    } catch (err: any) {
+      alert(`Sandbox Server Connection Error: Ensure sandbox server is running on http://localhost:4040 (${err?.message || 'NetworkError'})`);
     }
   };
 
@@ -170,10 +171,11 @@ export default function DashboardHome() {
         setScenarioStatus(`Dispatched webhook for reference '${overrideRef || triggerRef}'. HTTP Response: ${data.responseStatus}`);
         fetchDashboardData();
       } else {
-        alert('Failed to trigger webhook');
+        const errData = await res.json().catch(() => null);
+        alert(`Failed to trigger webhook (HTTP ${res.status}): ${errData?.message || 'Server error'}`);
       }
-    } catch {
-      alert('Error dispatching webhook');
+    } catch (err: any) {
+      alert(`Sandbox Server Connection Error: Ensure sandbox server is running on http://localhost:4040 (${err?.message || 'NetworkError'})`);
     }
   };
 
