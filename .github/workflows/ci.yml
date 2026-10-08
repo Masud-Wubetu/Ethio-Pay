@@ -31,11 +31,11 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
-      - name: Run Typecheck
-        run: pnpm --recursive run typecheck
-
       - name: Run Build
         run: pnpm build
+
+      - name: Run Typecheck
+        run: pnpm --recursive run typecheck
 
       - name: Run Vitest Suite
         run: pnpm test
