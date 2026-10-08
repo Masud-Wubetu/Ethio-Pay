@@ -46,16 +46,16 @@ Options:
     secretHash,
   });
 
-  server.app.listen(port, () => {
+  server.app.listen(port, '127.0.0.1', () => {
     console.log(`
 ┌───────────────────────────────────────────────────────────┐
 │                                                           │
 │   🚀  Ethio-Pay Local Webhook Simulator & Sandbox         │
 │                                                           │
 │   • Provider:   ${provider.toUpperCase().padEnd(38)}│
-│   • Dashboard:  http://localhost:${String(port).padEnd(25)}│
+│   • Dashboard:  http://127.0.0.1:${String(port).padEnd(25)}│
 │   • Target URL: ${targetUrl.padEnd(37)}│
-│   • Secret:     ${secretHash.padEnd(38)}│
+│   • Secret:     ${secretHash.slice(0, 8)}*** (redacted)${' '.repeat(Math.max(0, 24 - secretHash.slice(0, 8).length))}│
 │                                                           │
 └───────────────────────────────────────────────────────────┘
 `);

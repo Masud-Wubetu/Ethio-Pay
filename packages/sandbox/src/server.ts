@@ -66,6 +66,20 @@ export class SandboxServer {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
 
+    // Security: Live key protection check
+    if (this.secretHash.toLowerCase().includes('live') || this.secretHash.startsWith('CHASECK_LIVE')) {
+      console.warn('⚠️ SECURITY WARNING: Live API key detected in local Sandbox server! Use test/sandbox keys only.');
+    }
+
+    // Security: Host header verification middleware to prevent DNS rebinding
+    this.app.use((req, res, next) => {
+      const host = req.headers.host || '';
+      if (!host.startsWith('localhost') && !host.startsWith('127.0.0.1') && !host.startsWith('[::1]')) {
+        return res.status(403).json({ error: 'Access forbidden: Sandbox control server only accepts local connections.' });
+      }
+      next();
+    });
+
     this.setupRoutes();
   }
 

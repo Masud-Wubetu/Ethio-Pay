@@ -1,8 +1,30 @@
 {
   "name": "@ethio-pay/sandbox",
-  "version": "0.1.0",
-  "description": "Local webhook simulator and payment provider sandbox for Ethio-Pay",
+  "version": "0.1.0-beta.0",
+  "description": "Local webhook simulator and payment provider sandbox CLI for Ethio-Pay",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Masud-Wubetu/Ethio-Pay.git",
+    "directory": "packages/sandbox"
+  },
+  "keywords": [
+    "ethio-pay",
+    "sandbox",
+    "webhook-simulator",
+    "cli",
+    "chapa-simulator",
+    "local-dev"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -37,3 +59,4 @@
     "node": ">=18.0.0"
   }
 }
+

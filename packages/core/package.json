@@ -1,8 +1,34 @@
 {
   "name": "@ethio-pay/core",
-  "version": "0.1.0",
-  "description": "Core interfaces, types, and client for Ethio-Pay SDK",
+  "version": "0.1.0-beta.0",
+  "description": "Core interfaces, provider contracts, HTTP client, HMAC webhook verification, and idempotency middleware for Ethio-Pay SDK",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Masud-Wubetu/Ethio-Pay.git",
+    "directory": "packages/core"
+  },
+  "keywords": [
+    "ethio-pay",
+    "ethiopia",
+    "payment",
+    "sdk",
+    "chapa",
+    "telebirr",
+    "cbe-birr",
+    "webhooks",
+    "hmac",
+    "idempotency"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,3 +52,4 @@
     "node": ">=18.0.0"
   }
 }
+

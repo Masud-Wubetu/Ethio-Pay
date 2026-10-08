@@ -1,8 +1,29 @@
 {
   "name": "@ethio-pay/chapa",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.0",
   "description": "Chapa payment provider adapter for Ethio-Pay SDK",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Masud-Wubetu/Ethio-Pay.git",
+    "directory": "packages/chapa"
+  },
+  "keywords": [
+    "ethio-pay",
+    "chapa",
+    "ethiopia",
+    "payment-gateway",
+    "sdk-adapter"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -29,3 +50,4 @@
     "node": ">=18.0.0"
   }
 }
+
