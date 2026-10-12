@@ -45,7 +45,8 @@
   },
   "dependencies": {
     "@ethio-pay/chapa": "workspace:*",
-    "@ethio-pay/core": "workspace:*"
+    "@ethio-pay/core": "workspace:*",
+    "@ethio-pay/telebirr": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.0.2",

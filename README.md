@@ -15,6 +15,7 @@ Ethio-Pay is a modern TypeScript/Node.js monorepo providing:
 | [`ethio-pay`](./packages/ethio-pay) | `0.1.0` | Umbrella package re-exporting core client and all official adapters |
 | [`@ethio-pay/core`](./packages/core) | `0.1.0` | Core domain types, `PaymentProvider` contract, `HttpClient` with retry/backoff, and `Idempotency` middleware |
 | [`@ethio-pay/chapa`](./packages/chapa) | `0.1.0` | Chapa Payment Provider Adapter implementation |
+| [`@ethio-pay/telebirr`](./packages/telebirr) | `0.1.0` | Telebirr Fabric & H5 Payment Provider Adapter implementation |
 | [`@ethio-pay/sandbox`](./packages/sandbox) | `0.1.0` | Local Webhook Simulator server & `ethio-pay-sandbox` CLI binary |
 | [`@ethio-pay/example-express`](./examples/express) | `0.1.0` | Express reference application showing end-to-end SDK & webhook integration |
 
@@ -29,13 +30,13 @@ Ethio-Pay is a modern TypeScript/Node.js monorepo providing:
 npm install ethio-pay
 
 # Or modular packages:
-npm install @ethio-pay/core @ethio-pay/chapa
+npm install @ethio-pay/core @ethio-pay/chapa @ethio-pay/telebirr
 ```
 
 ### 2. Initialize SDK Client
 
 ```typescript
-import { EthiopianPayments, ChapaAdapter } from 'ethio-pay';
+import { EthiopianPayments, ChapaAdapter, TelebirrAdapter } from 'ethio-pay';
 
 // Configure Chapa adapter
 const chapa = new ChapaAdapter({

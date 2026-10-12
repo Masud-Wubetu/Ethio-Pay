@@ -70,6 +70,9 @@ importers:
       '@ethio-pay/core':
         specifier: workspace:*
         version: link:../core
+      '@ethio-pay/telebirr':
+        specifier: workspace:*
+        version: link:../telebirr
     devDependencies:
       tsup:
         specifier: ^8.0.2
