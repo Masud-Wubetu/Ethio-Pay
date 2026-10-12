@@ -1,0 +1,265 @@
+import crypto from 'node:crypto';
+import {
+  HttpClient,
+  PaymentError,
+  PaymentErrorCode,
+  Status,
+  type PaymentProvider,
+  type InitRequest,
+  type PaymentSession,
+  type PaymentStatus,
+  type PaymentEvent,
+  type WebhookHeaders,
+} from '@ethio-pay/core';
+import {
+  type TelebirrConfig,
+  type TelebirrFabricInitParams,
+  type TelebirrInitPayload,
+  type TelebirrInitResponse,
+} from './types.js';
+import {
+  createCanonicalString,
+  signWithPrivateKey,
+  encryptWithPublicKey,
+} from './crypto.js';
+
+export const DEFAULT_TELEBIRR_BASE_URL = 'https://app.ethiomobilemoney.et:2121';
+export const TELEBIRR_WEB_PAY_PATH = '/ammapi/payment/service-openup/toTradeWebPay';
+
+/**
+ * Telebirr Payment Provider Adapter implementation for Ethio-Pay.
+ */
+export class TelebirrAdapter implements PaymentProvider {
+  public readonly name = 'telebirr';
+  private config: TelebirrConfig;
+  private httpClient: HttpClient;
+
+  constructor(config: TelebirrConfig) {
+    this.validateConfig(config);
+    this.config = config;
+    this.httpClient = new HttpClient({
+      baseUrl: config.baseUrl || DEFAULT_TELEBIRR_BASE_URL,
+      timeoutMs: config.timeout ?? 15000,
+      maxRetries: config.maxRetries ?? 3,
+    });
+  }
+
+  /**
+   * Returns current Telebirr configuration (without exposing private key).
+   */
+  public getConfig(): Omit<TelebirrConfig, 'privateKey'> {
+    const { privateKey: _privateKey, ...safeConfig } = this.config;
+    return safeConfig;
+  }
+
+  /**
+   * Initializes a payment checkout session with Telebirr Fabric H5 gateway.
+   */
+  public async initialize(req: InitRequest): Promise<PaymentSession> {
+    if (!req.reference || req.reference.trim() === '') {
+      throw new PaymentError({
+        code: PaymentErrorCode.VALIDATION_ERROR,
+        message: 'Payment reference is required',
+        provider: 'telebirr',
+      });
+    }
+
+    if (typeof req.amount !== 'number' || req.amount <= 0 || Number.isNaN(req.amount)) {
+      throw new PaymentError({
+        code: PaymentErrorCode.VALIDATION_ERROR,
+        message: 'Payment amount must be a positive number',
+        provider: 'telebirr',
+      });
+    }
+
+    const currency = (req.currency || 'ETB').toUpperCase();
+    if (currency !== 'ETB') {
+      throw new PaymentError({
+        code: PaymentErrorCode.VALIDATION_ERROR,
+        message: `Telebirr only supports ETB currency, received: ${currency}`,
+        provider: 'telebirr',
+      });
+    }
+
+    const nonce = crypto.randomBytes(16).toString('hex');
+    const timestamp = String(Date.now());
+    const totalAmount = req.amount.toFixed(2);
+
+    const fabricParams: TelebirrFabricInitParams = {
+      appId: this.config.appId,
+      appkey: this.config.appKey,
+      nonce,
+      notifyUrl: req.callbackUrl || '',
+      outTradeNo: req.reference,
+      receiveName: req.customer?.name || 'Customer',
+      returnUrl: req.returnUrl || '',
+      shortCode: this.config.shortCode,
+      subject: req.description || `Payment ${req.reference}`,
+      timeoutExpress: '30',
+      totalAmount,
+      timestamp,
+    };
+
+    // 1. Generate canonical string from Fabric parameters
+    const canonical = createCanonicalString(
+      fabricParams as unknown as Record<string, unknown>
+    );
+
+    // 2. Sign canonical string using merchant RSA private key
+    const sign = signWithPrivateKey(canonical, this.config.privateKey);
+
+    // 3. Encrypt fabric parameters using Telebirr RSA public key
+    const ussd = encryptWithPublicKey(
+      JSON.stringify(fabricParams),
+      this.config.publicKey
+    );
+
+    const payload: TelebirrInitPayload = {
+      appid: this.config.appId,
+      sign,
+      ussd,
+    };
+
+    let responseData: TelebirrInitResponse;
+
+    try {
+      const response = await this.httpClient.request<TelebirrInitResponse>(
+        TELEBIRR_WEB_PAY_PATH,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+      responseData = response.data;
+    } catch (error: unknown) {
+      if (error instanceof PaymentError) {
+        throw error;
+      }
+      throw new PaymentError({
+        code: PaymentErrorCode.PROVIDER_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to connect to Telebirr API',
+        provider: 'telebirr',
+        raw: error,
+      });
+    }
+
+    // Telebirr indicates success via code 200 or 0
+    const code = Number(responseData.code);
+    if (code !== 200 && code !== 0) {
+      throw new PaymentError({
+        code: PaymentErrorCode.PROVIDER_ERROR,
+        message: responseData.msg || `Telebirr initialization failed with code: ${responseData.code}`,
+        provider: 'telebirr',
+        raw: responseData,
+      });
+    }
+
+    let checkoutUrl: string | undefined;
+    if (typeof responseData.data === 'string') {
+      checkoutUrl = responseData.data;
+    } else if (responseData.data && typeof responseData.data === 'object') {
+      checkoutUrl = responseData.data.toPayUrl || responseData.data.payUrl;
+    }
+
+    if (!checkoutUrl) {
+      throw new PaymentError({
+        code: PaymentErrorCode.PROVIDER_ERROR,
+        message: 'Telebirr response missing checkout URL (toPayUrl)',
+        provider: 'telebirr',
+        raw: responseData,
+      });
+    }
+
+    return {
+      id: req.reference,
+      provider: 'telebirr',
+      reference: req.reference,
+      checkoutUrl,
+      status: Status.PENDING,
+      amount: req.amount,
+      currency,
+      raw: responseData,
+    };
+  }
+
+  /**
+   * Queries payment status from Telebirr. (Implemented in Micro-Step 5)
+   */
+  public async verify(_reference: string): Promise<PaymentStatus> {
+    throw new PaymentError({
+      code: PaymentErrorCode.PROVIDER_ERROR,
+      message: 'Telebirr verify not yet implemented',
+      provider: 'telebirr',
+    });
+  }
+
+  /**
+   * Verifies incoming webhook request signatures. (Implemented in Micro-Step 5)
+   */
+  public verifyWebhook(_rawBody: string, _headers: WebhookHeaders): void {
+    throw new PaymentError({
+      code: PaymentErrorCode.PROVIDER_ERROR,
+      message: 'Telebirr webhook verification not yet implemented',
+      provider: 'telebirr',
+    });
+  }
+
+  /**
+   * Parses raw webhook body into a normalized PaymentEvent. (Implemented in Micro-Step 5)
+   */
+  public parseWebhook(_rawBody: string, _headers?: WebhookHeaders): PaymentEvent {
+    throw new PaymentError({
+      code: PaymentErrorCode.PROVIDER_ERROR,
+      message: 'Telebirr parse webhook not yet implemented',
+      provider: 'telebirr',
+    });
+  }
+
+  private validateConfig(config: TelebirrConfig): void {
+    if (!config) {
+      throw new PaymentError({
+        code: PaymentErrorCode.INVALID_CREDENTIALS,
+        message: 'Telebirr configuration is required',
+        provider: 'telebirr',
+      });
+    }
+    if (!config.appId) {
+      throw new PaymentError({
+        code: PaymentErrorCode.INVALID_CREDENTIALS,
+        message: 'Telebirr appId is required',
+        provider: 'telebirr',
+      });
+    }
+    if (!config.appKey) {
+      throw new PaymentError({
+        code: PaymentErrorCode.INVALID_CREDENTIALS,
+        message: 'Telebirr appKey is required',
+        provider: 'telebirr',
+      });
+    }
+    if (!config.shortCode) {
+      throw new PaymentError({
+        code: PaymentErrorCode.INVALID_CREDENTIALS,
+        message: 'Telebirr shortCode is required',
+        provider: 'telebirr',
+      });
+    }
+    if (!config.publicKey) {
+      throw new PaymentError({
+        code: PaymentErrorCode.INVALID_CREDENTIALS,
+        message: 'Telebirr publicKey is required',
+        provider: 'telebirr',
+      });
+    }
+    if (!config.privateKey) {
+      throw new PaymentError({
+        code: PaymentErrorCode.INVALID_CREDENTIALS,
+        message: 'Telebirr privateKey is required',
+        provider: 'telebirr',
+      });
+    }
+  }
+}
