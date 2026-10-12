@@ -83,12 +83,14 @@ export function verifyWithPublicKey(
 
 /**
  * Encrypts data using RSA public key (supports segmented chunking for payloads longer than key block size).
+ * Uses RSA_PKCS1_OAEP_PADDING for security compliance across all Node.js versions (CVE-2023-46809).
  */
 export function encryptWithPublicKey(data: string, publicKey: string): string {
   const formattedKey = formatPublicKey(publicKey);
   const buffer = Buffer.from(data, 'utf8');
-  // 2048-bit RSA key has max chunk size of 117 bytes for 1024-bit, or 245 bytes for 2048-bit with PKCS1 padding
-  const maxChunkSize = 117;
+  // For 2048-bit RSA with OAEP padding, max chunk size is 214 bytes.
+  // Using 64 bytes guarantees compatibility across both 1024-bit and 2048-bit keys.
+  const maxChunkSize = 64;
   const chunks: Buffer[] = [];
 
   for (let i = 0; i < buffer.length; i += maxChunkSize) {
@@ -96,7 +98,7 @@ export function encryptWithPublicKey(data: string, publicKey: string): string {
     const encrypted = crypto.publicEncrypt(
       {
         key: formattedKey,
-        padding: crypto.constants.RSA_PKCS1_PADDING,
+        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
       },
       chunk
     );
@@ -108,12 +110,12 @@ export function encryptWithPublicKey(data: string, publicKey: string): string {
 
 /**
  * Decrypts base64-encoded RSA ciphertext using private key.
+ * Uses RSA_PKCS1_OAEP_PADDING for security compliance across all Node.js versions (CVE-2023-46809).
  */
 export function decryptWithPrivateKey(ciphertext: string, privateKey: string): string {
   const formattedKey = formatPrivateKey(privateKey);
   const buffer = Buffer.from(ciphertext, 'base64');
   // Key block size for 1024-bit is 128 bytes, for 2048-bit is 256 bytes
-  // Determine key length dynamically
   const keyDetails = crypto.createPrivateKey(formattedKey);
   const keySizeInBytes = (keyDetails.asymmetricKeyDetails?.modulusLength || 2048) / 8;
 
@@ -124,7 +126,7 @@ export function decryptWithPrivateKey(ciphertext: string, privateKey: string): s
     const decrypted = crypto.privateDecrypt(
       {
         key: formattedKey,
-        padding: crypto.constants.RSA_PKCS1_PADDING,
+        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
       },
       chunk
     );
