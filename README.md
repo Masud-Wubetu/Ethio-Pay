@@ -12,6 +12,7 @@ Ethio-Pay is a modern TypeScript/Node.js monorepo providing:
 
 | Package | Version | Description |
 |---|---|---|
+| [`ethio-pay`](./packages/ethio-pay) | `0.1.0` | Umbrella package re-exporting core client and all official adapters |
 | [`@ethio-pay/core`](./packages/core) | `0.1.0` | Core domain types, `PaymentProvider` contract, `HttpClient` with retry/backoff, and `Idempotency` middleware |
 | [`@ethio-pay/chapa`](./packages/chapa) | `0.1.0` | Chapa Payment Provider Adapter implementation |
 | [`@ethio-pay/sandbox`](./packages/sandbox) | `0.1.0` | Local Webhook Simulator server & `ethio-pay-sandbox` CLI binary |
@@ -21,17 +22,20 @@ Ethio-Pay is a modern TypeScript/Node.js monorepo providing:
 
 ## 🚀 5-Minute Quickstart
 
-### 1. Install Packages
+### 1. Install Package
 
 ```bash
+# All-in-one package (recommended):
+npm install ethio-pay
+
+# Or modular packages:
 npm install @ethio-pay/core @ethio-pay/chapa
 ```
 
 ### 2. Initialize SDK Client
 
 ```typescript
-import { EthiopianPayments } from '@ethio-pay/core';
-import { ChapaAdapter } from '@ethio-pay/chapa';
+import { EthiopianPayments, ChapaAdapter } from 'ethio-pay';
 
 // Configure Chapa adapter
 const chapa = new ChapaAdapter({

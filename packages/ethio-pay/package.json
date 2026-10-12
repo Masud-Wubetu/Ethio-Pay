@@ -1,0 +1,57 @@
+{
+  "name": "ethio-pay",
+  "version": "0.1.0-beta.0",
+  "description": "Unified Payment SDK and Webhook Simulator for Ethiopian payment providers (Chapa, Telebirr, CBE Birr)",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Masud-Wubetu/Ethio-Pay.git",
+    "directory": "packages/ethio-pay"
+  },
+  "keywords": [
+    "ethio-pay",
+    "ethiopia",
+    "payment",
+    "sdk",
+    "chapa",
+    "telebirr",
+    "cbe-birr",
+    "webhooks",
+    "fintech"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ethio-pay/chapa": "workspace:*",
+    "@ethio-pay/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
