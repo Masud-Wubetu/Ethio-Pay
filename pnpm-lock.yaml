@@ -106,6 +106,19 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  packages/telebirr:
+    dependencies:
+      '@ethio-pay/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.0.2
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.29)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
 packages:
 
   '@esbuild/aix-ppc64@0.27.7':

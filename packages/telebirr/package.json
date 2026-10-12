@@ -1,0 +1,54 @@
+{
+  "name": "@ethio-pay/telebirr",
+  "version": "0.1.0-beta.0",
+  "description": "Telebirr payment provider adapter for Ethio-Pay SDK",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Masud-Wubetu/Ethio-Pay.git",
+    "directory": "packages/telebirr"
+  },
+  "keywords": [
+    "ethio-pay",
+    "telebirr",
+    "ethiopia",
+    "payment-gateway",
+    "sdk-adapter",
+    "fabric",
+    "mobile-money"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ethio-pay/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
