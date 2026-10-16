@@ -1,9 +1,10 @@
 import express, { type Express, type Request, type Response } from 'express';
 import cors from 'cors';
-import { createHmac } from 'node:crypto';
+import crypto, { createHmac } from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import type { Status } from '@ethio-pay/core';
+import { decryptWithPrivateKey } from '@ethio-pay/telebirr';
 
 
 export interface TransactionRecord {
@@ -40,6 +41,8 @@ export interface SandboxServerOptions {
   targetUrl?: string;
   provider?: string;
   secretHash?: string;
+  rsaPrivateKey?: string;
+  rsaPublicKey?: string;
 }
 
 /**
@@ -52,6 +55,8 @@ export class SandboxServer {
   public targetUrl: string;
   public provider: string;
   public secretHash: string;
+  public rsaPrivateKey: string;
+  public rsaPublicKey: string;
   public transactions = new Map<string, TransactionRecord>();
   public webhookLogs: WebhookLogRecord[] = [];
 
@@ -60,6 +65,19 @@ export class SandboxServer {
     this.targetUrl = options.targetUrl ?? 'http://localhost:3000/api/webhooks/chapa';
     this.provider = options.provider ?? 'chapa';
     this.secretHash = options.secretHash ?? 'sandbox_secret_hash_123';
+
+    if (options.rsaPrivateKey && options.rsaPublicKey) {
+      this.rsaPrivateKey = options.rsaPrivateKey;
+      this.rsaPublicKey = options.rsaPublicKey;
+    } else {
+      const keyPair = crypto.generateKeyPairSync('rsa', {
+        modulusLength: 2048,
+        publicKeyEncoding: { type: 'spki', format: 'pem' },
+        privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+      });
+      this.rsaPrivateKey = options.rsaPrivateKey ?? keyPair.privateKey;
+      this.rsaPublicKey = options.rsaPublicKey ?? keyPair.publicKey;
+    }
 
     this.app = express();
     this.app.use(cors());
@@ -252,6 +270,129 @@ export class SandboxServer {
           reference: tx.reference,
           created_at: tx.createdAt,
           updated_at: tx.updatedAt,
+        },
+      });
+    });
+
+    // Public key endpoint for Telebirr simulation clients
+    this.app.get('/api/telebirr/public-key', (_req: Request, res: Response) => {
+      return res.json({
+        status: 'success',
+        publicKey: this.rsaPublicKey,
+      });
+    });
+
+    // Emulate Telebirr Fabric toTradeWebPay endpoint
+    this.app.post('/ammapi/payment/service-openup/toTradeWebPay', (req: Request, res: Response) => {
+      const { appid, sign, ussd } = req.body || {};
+
+      let fabricParams: Record<string, any>;
+      try {
+        if (!ussd) {
+          throw new Error('Missing ussd encrypted parameter in Telebirr payload');
+        }
+        // Attempt RSA decryption using sandbox private key
+        const decryptedJson = decryptWithPrivateKey(ussd, this.rsaPrivateKey);
+        fabricParams = JSON.parse(decryptedJson);
+      } catch (err: any) {
+        // Fallback: If sent plain JSON in direct testing
+        if (req.body?.outTradeNo) {
+          fabricParams = req.body;
+        } else {
+          return res.status(400).json({
+            code: 400,
+            msg: `Failed to decrypt Telebirr ussd payload: ${err.message}`,
+          });
+        }
+      }
+
+      const reference = fabricParams.outTradeNo;
+      if (!reference) {
+        return res.status(400).json({
+          code: 400,
+          msg: 'outTradeNo is required in Fabric parameters',
+        });
+      }
+
+      const tx: TransactionRecord = {
+        reference,
+        amount: Number(fabricParams.totalAmount) || 0,
+        currency: 'ETB',
+        firstName: fabricParams.receiveName,
+        callbackUrl: fabricParams.notifyUrl || this.targetUrl,
+        returnUrl: fabricParams.returnUrl,
+        status: 'PENDING',
+        provider: 'telebirr',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      this.transactions.set(reference, tx);
+
+      const checkoutUrl = `http://localhost:${this.port}/checkout/${encodeURIComponent(reference)}`;
+
+      return res.json({
+        code: 200,
+        msg: 'success',
+        data: {
+          toPayUrl: checkoutUrl,
+        },
+      });
+    });
+
+    // Emulate Telebirr queryOrder endpoint
+    this.app.post('/ammapi/payment/service-openup/queryOrder', (req: Request, res: Response) => {
+      let queryParams: Record<string, any>;
+      const { appid, sign, ussd } = req.body || {};
+
+      try {
+        if (ussd) {
+          const decryptedJson = decryptWithPrivateKey(ussd, this.rsaPrivateKey);
+          queryParams = JSON.parse(decryptedJson);
+        } else if (req.body?.outTradeNo) {
+          queryParams = req.body;
+        } else {
+          return res.status(400).json({
+            code: 400,
+            msg: 'Missing ussd encrypted parameter or outTradeNo',
+          });
+        }
+      } catch (err: any) {
+        return res.status(400).json({
+          code: 400,
+          msg: `Failed to decrypt Telebirr query ussd payload: ${err.message}`,
+        });
+      }
+
+      const reference = queryParams.outTradeNo;
+      const tx = this.transactions.get(reference);
+
+      if (!tx) {
+        return res.status(404).json({
+          code: 404,
+          msg: `Transaction with outTradeNo '${reference}' not found in sandbox`,
+        });
+      }
+
+      let tradeStatus = 'PAYING';
+      if (tx.status === 'SUCCEEDED') {
+        tradeStatus = 'TRADE_SUCCESS';
+      } else if (tx.status === 'FAILED') {
+        tradeStatus = 'TRADE_CLOSED';
+      } else if (tx.status === 'EXPIRED') {
+        tradeStatus = 'EXPIRED';
+      }
+
+      return res.json({
+        code: 200,
+        msg: 'success',
+        data: {
+          outTradeNo: tx.reference,
+          tradeNo: `TB_${Date.now()}`,
+          tradeStatus,
+          totalAmount: tx.amount.toFixed(2),
+          currency: tx.currency,
+          paidTime: tx.updatedAt,
         },
       });
     });

@@ -89,6 +89,9 @@ importers:
       '@ethio-pay/core':
         specifier: workspace:*
         version: link:../core
+      '@ethio-pay/telebirr':
+        specifier: workspace:*
+        version: link:../telebirr
       cors:
         specifier: ^2.8.5
         version: 2.8.6

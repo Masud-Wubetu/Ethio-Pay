@@ -46,6 +46,7 @@
   "dependencies": {
     "@ethio-pay/chapa": "workspace:*",
     "@ethio-pay/core": "workspace:*",
+    "@ethio-pay/telebirr": "workspace:*",
     "cors": "^2.8.5",
     "express": "^4.19.2"
   },
