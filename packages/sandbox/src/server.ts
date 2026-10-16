@@ -493,6 +493,13 @@ export class SandboxServer {
     this.app.get('/checkout/:ref', (req: Request, res: Response) => {
       const ref = req.params.ref;
       const tx = this.transactions.get(ref);
+      const effectiveProvider = (tx?.provider || this.provider).toLowerCase();
+      const isTelebirr = effectiveProvider === 'telebirr';
+      const brandTitle = isTelebirr ? 'TELEBIRR' : 'CHAPA';
+      const brandColor = isTelebirr ? '#0072ce' : '#38bdf8';
+      const gradientBtn = isTelebirr
+        ? 'linear-gradient(135deg, #0072ce 0%, #00569a 100%)'
+        : 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
 
       const html = `
 <!DOCTYPE html>
@@ -500,7 +507,7 @@ export class SandboxServer {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pay with ${this.provider.toUpperCase()} (Test Mode)</title>
+  <title>Pay with ${brandTitle} (Test Mode)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -547,10 +554,10 @@ export class SandboxServer {
       align-items: center;
       margin-bottom: 24px;
     }
-    .brand-name { font-size: 22px; font-weight: 800; color: #38bdf8; letter-spacing: -0.02em; }
+    .brand-name { font-size: 22px; font-weight: 800; color: ${brandColor}; letter-spacing: -0.02em; }
     .amount-box { text-align: center; background: rgba(10, 16, 28, 0.6); border-radius: 16px; padding: 20px; margin-bottom: 24px; border: 1px solid rgba(255, 255, 255, 0.05); }
     .amount-val { font-size: 38px; font-weight: 800; color: #ffffff; }
-    .amount-cur { font-size: 16px; color: #38bdf8; font-weight: 700; margin-left: 4px; }
+    .amount-cur { font-size: 16px; color: ${brandColor}; font-weight: 700; margin-left: 4px; }
     .ref-code { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #94a3b8; margin-top: 6px; }
 
     .form-group { margin-bottom: 16px; }
@@ -565,11 +572,11 @@ export class SandboxServer {
       font-size: 14px;
       font-family: inherit;
     }
-    .form-input:focus { outline: none; border-color: #38bdf8; }
+    .form-input:focus { outline: none; border-color: ${brandColor}; }
 
     .test-helper {
       font-size: 12px;
-      color: #38bdf8;
+      color: ${brandColor};
       background: rgba(56, 189, 248, 0.1);
       border: 1px dashed rgba(56, 189, 248, 0.3);
       border-radius: 8px;
@@ -587,12 +594,12 @@ export class SandboxServer {
       padding: 16px;
       border: none;
       border-radius: 12px;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: ${gradientBtn};
       color: white;
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+      box-shadow: 0 6px 20px rgba(0, 114, 206, 0.3);
       transition: all 0.2s;
     }
     .btn-pay:hover { opacity: 0.95; transform: translateY(-1px); }
@@ -619,7 +626,7 @@ export class SandboxServer {
       max-width: 380px;
       text-align: center;
     }
-    .pin-input { font-size: 28px; letter-spacing: 12px; text-align: center; width: 180px; padding: 10px; background: #0f172a; border: 1px solid #38bdf8; border-radius: 10px; color: white; margin: 20px 0; }
+    .pin-input { font-size: 28px; letter-spacing: 12px; text-align: center; width: 180px; padding: 10px; background: #0f172a; border: 1px solid ${brandColor}; border-radius: 10px; color: white; margin: 20px 0; }
   </style>
 </head>
 <body>
@@ -628,8 +635,8 @@ export class SandboxServer {
   <div class="checkout-wrapper">
     <div class="card">
       <div class="brand-row">
-        <span class="brand-name">${this.provider.toUpperCase()} CHECKOUT</span>
-        <span style="font-size: 12px; color: #94a3b8;">Hosted Gateway</span>
+        <span class="brand-name">${brandTitle} CHECKOUT</span>
+        <span style="font-size: 12px; color: #94a3b8;">${isTelebirr ? 'Fabric H5 Gateway' : 'Hosted Gateway'}</span>
       </div>
 
       ${
@@ -641,13 +648,13 @@ export class SandboxServer {
         </div>
 
         <div class="test-helper" onclick="autofillTest()">
-          <span>💡 Autofill Test Telebirr Credentials</span>
+          <span>💡 Autofill Test ${brandTitle} Credentials</span>
           <strong>0911000000</strong>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Phone Number / Account Email</label>
-          <input type="text" id="account" class="form-input" value="${tx.phone || tx.email || '0911234567'}">
+          <label class="form-label">${isTelebirr ? 'Telebirr Phone Number' : 'Phone Number / Account Email'}</label>
+          <input type="text" id="account" class="form-input" value="${tx.phone || tx.email || '0911000000'}">
         </div>
 
         <button class="btn-pay" onclick="openPinModal()">Pay ${tx.amount} ${tx.currency}</button>
@@ -660,7 +667,7 @@ export class SandboxServer {
 
   <div class="modal-overlay" id="pin-modal">
     <div class="modal-card">
-      <h3 style="margin-top:0;">Enter Test PIN / OTP</h3>
+      <h3 style="margin-top:0;">${isTelebirr ? 'Telebirr USSD / Quick PIN' : 'Enter Test PIN / OTP'}</h3>
       <p style="font-size: 13px; color: #94a3b8;">Enter <strong>123456</strong> to complete test authorization</p>
       <input type="password" id="pin" class="pin-input" maxlength="6" value="123456">
       <br>
@@ -681,7 +688,7 @@ export class SandboxServer {
     }
     async function confirmPayment() {
       const pinModal = document.getElementById('pin-modal');
-      pinModal.innerHTML = '<div class="modal-card"><h3 style="color: #38bdf8; margin-top:0;">Processing Payment...</h3><p style="color:#94a3b8; font-size:13px;">Dispatching signed webhook...</p></div>';
+      pinModal.innerHTML = '<div class="modal-card"><h3 style="color: ${brandColor}; margin-top:0;">Processing Payment...</h3><p style="color:#94a3b8; font-size:13px;">Dispatching signed webhook...</p></div>';
 
       try {
         const res = await fetch('/api/trigger-action', {
