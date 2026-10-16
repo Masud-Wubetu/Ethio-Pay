@@ -4,7 +4,11 @@ import crypto, { createHmac } from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import type { Status } from '@ethio-pay/core';
-import { decryptWithPrivateKey } from '@ethio-pay/telebirr';
+import {
+  decryptWithPrivateKey,
+  signWithPrivateKey,
+  createCanonicalString,
+} from '@ethio-pay/telebirr';
 
 
 export interface TransactionRecord {
@@ -106,8 +110,13 @@ export class SandboxServer {
     targetStatus: Status,
     options: { tamperSignature?: boolean; delayMs?: number; targetUrl?: string } = {}
   ): Promise<WebhookLogRecord> {
-    const startTime = Date.now();
     const tx = this.transactions.get(reference);
+    const provider = tx?.provider || this.provider;
+    if (provider === 'telebirr') {
+      return this.sendTelebirrWebhook(reference, targetStatus, options);
+    }
+
+    const startTime = Date.now();
     if (tx) {
       tx.status = targetStatus;
       tx.updatedAt = new Date().toISOString();
@@ -166,6 +175,87 @@ export class SandboxServer {
 
     const logRecord: WebhookLogRecord = {
       id: `wh_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      reference,
+      targetUrl: destination,
+      status: targetStatus,
+      payload,
+      headers,
+      responseStatus,
+      responseBody,
+      executionTimeMs,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.webhookLogs.unshift(logRecord);
+    return logRecord;
+  }
+
+  public async sendTelebirrWebhook(
+    reference: string,
+    targetStatus: Status,
+    options: { tamperSignature?: boolean; delayMs?: number; targetUrl?: string } = {}
+  ): Promise<WebhookLogRecord> {
+    const startTime = Date.now();
+    const tx = this.transactions.get(reference);
+    if (tx) {
+      tx.status = targetStatus;
+      tx.updatedAt = new Date().toISOString();
+    }
+
+    const destination = options.targetUrl || tx?.callbackUrl || this.targetUrl;
+    const rawStatus = targetStatus === 'SUCCEEDED' ? 'TRADE_SUCCESS' : 'TRADE_CLOSED';
+
+    const payloadObj: Record<string, any> = {
+      outTradeNo: reference,
+      msisdn: tx?.phone || '0911000000',
+      totalAmount: (tx?.amount || 100).toFixed(2),
+      tradeDate: String(Date.now()),
+      tradeNo: `TB_${Date.now()}`,
+      tradeStatus: rawStatus,
+    };
+
+    const canonical = createCanonicalString(payloadObj);
+    let signature = signWithPrivateKey(canonical, this.rsaPrivateKey);
+
+    if (options.tamperSignature) {
+      signature = 'tampered_forged_invalid_rsa_signature_base64_123';
+    }
+
+    const payload = {
+      ...payloadObj,
+      sign: signature,
+    };
+
+    if (options.delayMs && options.delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, options.delayMs));
+    }
+
+    const rawBody = JSON.stringify(payload);
+    const headers: Record<string, string> = {
+      'content-type': 'application/json',
+      'x-telebirr-signature': signature,
+    };
+
+    let responseStatus = 0;
+    let responseBody = '';
+
+    try {
+      const res = await fetch(destination, {
+        method: 'POST',
+        headers,
+        body: rawBody,
+      });
+      responseStatus = res.status;
+      responseBody = await res.text();
+    } catch (err: any) {
+      responseStatus = 500;
+      responseBody = err.message || 'Telebirr webhook dispatch network failure';
+    }
+
+    const executionTimeMs = Date.now() - startTime;
+
+    const logRecord: WebhookLogRecord = {
+      id: `wh_tb_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       reference,
       targetUrl: destination,
       status: targetStatus,
