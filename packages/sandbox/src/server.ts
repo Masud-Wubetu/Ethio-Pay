@@ -862,7 +862,7 @@ export class SandboxServer {
     <div class="top-bar">
       <div>
         <h1 class="page-title">Developer Webhook Simulator</h1>
-        <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">Gateway: <strong>${this.provider.toUpperCase()}</strong> | Secret: <code>${this.secretHash}</code></div>
+        <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">Gateway: <strong>${this.provider.toUpperCase()}</strong> | Secret: <code>${this.secretHash}</code> | Telebirr Public Key: <a href="/api/telebirr/public-key" target="_blank" style="color:var(--primary); text-decoration:none;">/api/telebirr/public-key</a></div>
       </div>
       <div class="target-badge">Webhook Target: ${this.targetUrl}</div>
     </div>
@@ -898,6 +898,7 @@ export class SandboxServer {
           <thead>
             <tr>
               <th>Reference</th>
+              <th>Provider</th>
               <th>Amount</th>
               <th>Status</th>
               <th>Simulate Webhook</th>
@@ -911,6 +912,7 @@ export class SandboxServer {
                       (tx) => `
               <tr>
                 <td><strong>${tx.reference}</strong></td>
+                <td><span class="badge-status" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">${(tx.provider || 'chapa').toUpperCase()}</span></td>
                 <td>${tx.amount} ${tx.currency}</td>
                 <td><span class="badge-status badge-${tx.status}">${tx.status}</span></td>
                 <td>
@@ -920,7 +922,7 @@ export class SandboxServer {
             `
                     )
                     .join('')
-                : `<tr><td colspan="4" style="color: var(--muted); text-align: center; padding: 24px;">No transactions initialized yet. Initialize a payment from your app to test.</td></tr>`
+                : `<tr><td colspan="5" style="color: var(--muted); text-align: center; padding: 24px;">No transactions initialized yet. Initialize a payment from your app to test.</td></tr>`
             }
           </tbody>
         </table>

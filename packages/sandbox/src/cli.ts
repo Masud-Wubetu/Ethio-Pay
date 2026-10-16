@@ -35,8 +35,12 @@ Options:
   }
 
   const port = Number(values.port) || 4040;
-  const targetUrl = values.target || 'http://localhost:3000/api/webhooks/chapa';
-  const provider = values.provider || 'chapa';
+  const provider = (values.provider || 'chapa').toLowerCase();
+  const defaultTarget =
+    provider === 'telebirr'
+      ? 'http://localhost:3000/api/webhooks/telebirr'
+      : 'http://localhost:3000/api/webhooks/chapa';
+  const targetUrl = values.target || defaultTarget;
   const secretHash = values.secret || 'sandbox_secret_hash_123';
 
   const server = new SandboxServer({
@@ -47,6 +51,10 @@ Options:
   });
 
   server.app.listen(port, '127.0.0.1', () => {
+    const pubKeyLine =
+      provider === 'telebirr'
+        ? `│   • Telebirr PK:http://127.0.0.1:${String(port)}/api/telebirr/public-key${' '.repeat(Math.max(0, 15 - String(port).length))}│\n`
+        : '';
     console.log(`
 ┌───────────────────────────────────────────────────────────┐
 │                                                           │
@@ -54,8 +62,8 @@ Options:
 │                                                           │
 │   • Provider:   ${provider.toUpperCase().padEnd(38)}│
 │   • Dashboard:  http://127.0.0.1:${String(port).padEnd(25)}│
-│   • Target URL: ${targetUrl.padEnd(37)}│
-│   • Secret:     ${secretHash.slice(0, 8)}*** (redacted)${' '.repeat(Math.max(0, 24 - secretHash.slice(0, 8).length))}│
+│   • Target URL: ${targetUrl.slice(0, 36).padEnd(37)}│
+${pubKeyLine}│   • Secret:     ${secretHash.slice(0, 8)}*** (redacted)${' '.repeat(Math.max(0, 24 - secretHash.slice(0, 8).length))}│
 │                                                           │
 └───────────────────────────────────────────────────────────┘
 `);
