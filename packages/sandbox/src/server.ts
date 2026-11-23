@@ -364,6 +364,41 @@ export class SandboxServer {
       });
     });
 
+    // Emulate Chapa refund endpoint
+    this.app.post('/v1/refund', (req: Request, res: Response) => {
+      const ref = req.body?.trx_ref || req.body?.tx_ref;
+      if (!ref) {
+        return res.status(400).json({
+          status: 'failed',
+          message: 'trx_ref or tx_ref is required for refund',
+        });
+      }
+
+      const tx = this.transactions.get(ref);
+      if (!tx) {
+        return res.status(404).json({
+          status: 'failed',
+          message: `Transaction reference '${ref}' not found in sandbox`,
+        });
+      }
+
+      tx.status = 'REFUNDED' as Status;
+      tx.updatedAt = new Date().toISOString();
+
+      const refundId = `chapa_rf_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+      return res.json({
+        status: 'success',
+        message: 'Refund processed successfully',
+        data: {
+          reference: ref,
+          refund_id: refundId,
+          status: 'success',
+          amount: req.body?.amount ? Number(req.body.amount) : tx.amount,
+        },
+      });
+    });
+
     // Public key endpoint for Telebirr simulation clients
     this.app.get('/api/telebirr/public-key', (_req: Request, res: Response) => {
       return res.json({

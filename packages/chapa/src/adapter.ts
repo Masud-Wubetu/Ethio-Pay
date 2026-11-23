@@ -11,6 +11,8 @@ import {
   type PaymentEvent,
   type PaymentEventType,
   type WebhookHeaders,
+  type RefundRequest,
+  type RefundResult,
 } from '@ethio-pay/core';
 
 export interface ChapaAdapterOptions {
@@ -171,6 +173,88 @@ export class ChapaAdapter implements PaymentProvider {
       throw new PaymentError({
         code: PaymentErrorCode.PROVIDER_ERROR,
         message: (err as Error).message || 'Chapa verification failed',
+        provider: 'chapa',
+        raw: err,
+      });
+    }
+  }
+
+  public async refund(req: RefundRequest): Promise<RefundResult> {
+    if (!req.reference || typeof req.reference !== 'string' || req.reference.trim() === '') {
+      throw new PaymentError({
+        code: PaymentErrorCode.VALIDATION_ERROR,
+        message: 'Transaction reference is required for refund',
+        provider: 'chapa',
+      });
+    }
+
+    const payload: Record<string, unknown> = {
+      trx_ref: req.reference,
+      tx_ref: req.reference,
+    };
+
+    if (req.amount !== undefined) {
+      if (typeof req.amount !== 'number' || req.amount <= 0 || Number.isNaN(req.amount)) {
+        throw new PaymentError({
+          code: PaymentErrorCode.VALIDATION_ERROR,
+          message: 'Refund amount must be a positive number',
+          provider: 'chapa',
+        });
+      }
+      payload.amount = String(req.amount);
+    }
+
+    if (req.reason) {
+      payload.reason = req.reason;
+    }
+
+    try {
+      const response = await this.httpClient.request<{
+        status: string;
+        message: string;
+        data?: {
+          reference?: string;
+          refund_id?: string;
+          status?: string;
+        };
+      }>('/v1/refund', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.data.status !== 'success') {
+        throw new PaymentError({
+          code: PaymentErrorCode.PROVIDER_ERROR,
+          message: response.data.message || 'Chapa refund failed',
+          provider: 'chapa',
+          httpStatus: response.status,
+          raw: response.data,
+        });
+      }
+
+      const refundId =
+        response.data.data?.refund_id ||
+        response.data.data?.reference ||
+        `REFUND-${req.reference}-${Date.now()}`;
+
+      return {
+        provider: 'chapa',
+        reference: req.reference,
+        refundId,
+        status: Status.REFUNDED,
+        raw: response.data,
+      };
+    } catch (err: unknown) {
+      if (err instanceof PaymentError) {
+        throw err;
+      }
+      throw new PaymentError({
+        code: PaymentErrorCode.PROVIDER_ERROR,
+        message: (err as Error).message || 'Chapa refund failed',
         provider: 'chapa',
         raw: err,
       });

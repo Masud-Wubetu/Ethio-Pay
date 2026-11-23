@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import express, { type Request, type Response } from 'express';
 import crypto from 'node:crypto';
 import { Status, PaymentErrorCode, PaymentError } from '@ethio-pay/core';
+import { ChapaAdapter } from '@ethio-pay/chapa';
 import { TelebirrAdapter } from '@ethio-pay/telebirr';
 import { SandboxServer } from './server.js';
 
@@ -182,5 +183,36 @@ describe('SandboxServer - Telebirr Simulation', () => {
 
   it('returns error when querying non-existent transaction', async () => {
     await expect(telebirrAdapter.verify('NON_EXISTENT_REF')).rejects.toThrow(PaymentError);
+  });
+
+  it('simulates Chapa refund endpoint and updates transaction status', async () => {
+    sandbox.transactions.set('TX-CHAPA-REFUND-1', {
+      reference: 'TX-CHAPA-REFUND-1',
+      amount: 300,
+      currency: 'ETB',
+      status: Status.SUCCEEDED,
+      provider: 'chapa',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    const chapaAdapter = new ChapaAdapter({
+      secretKey: 'CHASECK_TEST-12345',
+      baseUrl: `http://localhost:${sandboxPort}`,
+    });
+
+    const refundResult = await chapaAdapter.refund({
+      provider: 'chapa',
+      reference: 'TX-CHAPA-REFUND-1',
+      amount: 150,
+      reason: 'Customer return',
+    });
+
+    expect(refundResult.status).toBe(Status.REFUNDED);
+    expect(refundResult.reference).toBe('TX-CHAPA-REFUND-1');
+    expect(refundResult.refundId).toBeDefined();
+
+    const updatedTx = sandbox.transactions.get('TX-CHAPA-REFUND-1');
+    expect(updatedTx?.status).toBe(Status.REFUNDED);
   });
 });

@@ -1,0 +1,22 @@
+{
+  "name": "@ethio-pay/example-nextjs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Next.js App Router reference integration for Ethio-Pay",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ethio-pay/chapa": "workspace:*",
+    "@ethio-pay/core": "workspace:*",
+    "@ethio-pay/telebirr": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
+

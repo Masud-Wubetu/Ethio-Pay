@@ -49,6 +49,22 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  examples/nextjs:
+    dependencies:
+      '@ethio-pay/chapa':
+        specifier: workspace:*
+        version: link:../../packages/chapa
+      '@ethio-pay/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@ethio-pay/telebirr':
+        specifier: workspace:*
+        version: link:../../packages/telebirr
+    devDependencies:
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
   packages/chapa:
     dependencies:
       '@ethio-pay/core':

@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   InMemoryIdempotencyStore,
+  RedisIdempotencyStore,
   createIdempotencyMiddleware,
+  extractIdempotencyKey,
 } from './idempotency.js';
 
 describe('InMemoryIdempotencyStore', () => {
@@ -79,5 +81,55 @@ describe('createIdempotencyMiddleware', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ idempotent: true })
     );
+  });
+});
+
+describe('RedisIdempotencyStore', () => {
+  it('stores and checks idempotency keys with mock Redis client', async () => {
+    const memory = new Map<string, string>();
+    const mockRedis = {
+      get: vi.fn(async (key: string) => memory.get(key) ?? null),
+      set: vi.fn(async (key: string, val: string) => {
+        memory.set(key, val);
+        return 'OK';
+      }),
+    };
+
+    const store = new RedisIdempotencyStore({
+      client: mockRedis,
+      keyPrefix: 'test:idemp:',
+      defaultTtlMs: 3600000,
+    });
+
+    expect(await store.has('TX-100')).toBe(false);
+    await store.set('TX-100', { processed: true });
+
+    expect(mockRedis.set).toHaveBeenCalledWith(
+      'test:idemp:TX-100',
+      JSON.stringify({ processed: true }),
+      'EX',
+      3600
+    );
+    expect(await store.has('TX-100')).toBe(true);
+
+    const val = await store.get('TX-100');
+    expect(val).toEqual({ processed: true });
+  });
+
+  it('throws if Redis client is missing', () => {
+    expect(() => new RedisIdempotencyStore({} as any)).toThrowError();
+  });
+});
+
+describe('extractIdempotencyKey', () => {
+  it('extracts key from x-idempotency-key header', () => {
+    const key = extractIdempotencyKey({ 'X-Idempotency-Key': 'IDEMP-123' }, null);
+    expect(key).toBe('IDEMP-123');
+  });
+
+  it('extracts key from Chapa tx_ref and Telebirr outTradeNo', () => {
+    expect(extractIdempotencyKey({}, { tx_ref: 'CHAPA-REF' })).toBe('CHAPA-REF');
+    expect(extractIdempotencyKey({}, { outTradeNo: 'TB-REF' })).toBe('TB-REF');
+    expect(extractIdempotencyKey({}, JSON.stringify({ tradeNo: 'TB-NO' }))).toBe('TB-NO');
   });
 });

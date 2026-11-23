@@ -114,4 +114,41 @@ describe('ChapaAdapter', () => {
     expect(event.reference).toBe('TX-CHAPA-1');
     expect(event.amount).toBe(250);
   });
+
+  it('processes refund and returns normalized RefundResult', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => ({
+        status: 'success',
+        message: 'Refund processed successfully',
+        data: {
+          reference: 'TX-CHAPA-1',
+          refund_id: 'chapa_rf_12345',
+          status: 'success',
+        },
+      }),
+    } as any);
+
+    const adapter = new ChapaAdapter({ secretKey });
+    const result = await adapter.refund({
+      provider: 'chapa',
+      reference: 'TX-CHAPA-1',
+      amount: 100,
+      reason: 'Customer return',
+    });
+
+    expect(result.provider).toBe('chapa');
+    expect(result.reference).toBe('TX-CHAPA-1');
+    expect(result.refundId).toBe('chapa_rf_12345');
+    expect(result.status).toBe(Status.REFUNDED);
+  });
+
+  it('throws validation error when refunding without reference', async () => {
+    const adapter = new ChapaAdapter({ secretKey });
+    await expect(adapter.refund({ provider: 'chapa', reference: '' })).rejects.toThrow(
+      PaymentError
+    );
+  });
 });
