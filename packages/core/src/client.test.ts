@@ -82,4 +82,89 @@ describe('EthiopianPayments Client', () => {
       })
     ).rejects.toThrow(PaymentError);
   });
+
+  it('automatically falls back to fallbackProvider when primary provider throws an outage error', async () => {
+    const failingPrimary: PaymentProvider = {
+      name: 'chapa',
+      initialize: vi.fn().mockRejectedValue(new Error('Chapa 503 Service Unavailable')),
+      verify: vi.fn(),
+      verifyWebhook: vi.fn(),
+      parseWebhook: vi.fn(),
+    };
+
+    const healthyFallback: PaymentProvider = {
+      name: 'telebirr',
+      initialize: vi.fn().mockResolvedValue({
+        id: 'telebirr-session-99',
+        provider: 'telebirr',
+        reference: 'TX-FAILOVER-1',
+        checkoutUrl: 'https://telebirr.et/pay/99',
+        status: 'PENDING',
+        amount: 200,
+        currency: 'ETB',
+        raw: {},
+      }),
+      verify: vi.fn(),
+      verifyWebhook: vi.fn(),
+      parseWebhook: vi.fn(),
+    };
+
+    const sdk = new EthiopianPayments({
+      providers: [failingPrimary, healthyFallback],
+    });
+
+    const session = await sdk.initialize({
+      provider: 'chapa',
+      fallbackProviders: ['telebirr'],
+      amount: 200,
+      currency: 'ETB',
+      reference: 'TX-FAILOVER-1',
+    });
+
+    expect(failingPrimary.initialize).toHaveBeenCalled();
+    expect(healthyFallback.initialize).toHaveBeenCalled();
+    expect(session.provider).toBe('telebirr');
+    expect(session.checkoutUrl).toBe('https://telebirr.et/pay/99');
+  });
+
+  it('uses defaultFallbackProviders when configured on client level', async () => {
+    const failingPrimary: PaymentProvider = {
+      name: 'primary',
+      initialize: vi.fn().mockRejectedValue(new Error('Gateway Down')),
+      verify: vi.fn(),
+      verifyWebhook: vi.fn(),
+      parseWebhook: vi.fn(),
+    };
+
+    const healthyBackup: PaymentProvider = {
+      name: 'backup',
+      initialize: vi.fn().mockResolvedValue({
+        id: 'backup-session',
+        provider: 'backup',
+        reference: 'TX-DEF-1',
+        checkoutUrl: 'https://backup.et/pay',
+        status: 'PENDING',
+        amount: 150,
+        currency: 'ETB',
+        raw: {},
+      }),
+      verify: vi.fn(),
+      verifyWebhook: vi.fn(),
+      parseWebhook: vi.fn(),
+    };
+
+    const sdk = new EthiopianPayments({
+      providers: [failingPrimary, healthyBackup],
+      defaultFallbackProviders: ['backup'],
+    });
+
+    const session = await sdk.initialize({
+      provider: 'primary',
+      amount: 150,
+      currency: 'ETB',
+      reference: 'TX-DEF-1',
+    });
+
+    expect(session.provider).toBe('backup');
+  });
 });

@@ -15,6 +15,7 @@ export type Environment = 'sandbox' | 'production';
 export interface EthiopianPaymentsOptions {
   environment?: Environment;
   providers?: PaymentProvider[];
+  defaultFallbackProviders?: string[];
   validationOptions?: ValidationOptions;
 }
 
@@ -24,10 +25,12 @@ export interface EthiopianPaymentsOptions {
 export class EthiopianPayments {
   private providers = new Map<string, PaymentProvider>();
   private environment: Environment;
+  private defaultFallbackProviders: string[];
   private validationOptions: ValidationOptions;
 
   constructor(options: EthiopianPaymentsOptions = {}) {
     this.environment = options.environment || 'production';
+    this.defaultFallbackProviders = options.defaultFallbackProviders || [];
     this.validationOptions = options.validationOptions || {};
 
     if (options.providers) {
@@ -77,13 +80,37 @@ export class EthiopianPayments {
       });
     }
 
-    const provider = this.getProvider(req.provider);
-    validateInitRequest(req, {
-      providerName: provider.name,
-      ...this.validationOptions,
-    });
+    const candidateProviders = [
+      req.provider,
+      ...(req.fallbackProviders || this.defaultFallbackProviders || []),
+    ];
 
-    return provider.initialize(req);
+    let lastError: any;
+
+    for (const providerName of candidateProviders) {
+      try {
+        const provider = this.getProvider(providerName);
+        validateInitRequest(
+          { ...req, provider: providerName },
+          {
+            providerName: provider.name,
+            ...this.validationOptions,
+          }
+        );
+
+        return await provider.initialize({ ...req, provider: providerName });
+      } catch (err: any) {
+        lastError = err;
+        // If it's a validation error caused by core request params (e.g. non-positive amount), fail immediately
+        if (err?.code === PaymentErrorCode.VALIDATION_ERROR && err.provider === 'core') {
+          throw err;
+        }
+        // If there are more candidate providers, continue to next fallback
+        continue;
+      }
+    }
+
+    throw lastError;
   }
 
   public async verify(providerName: string, reference: string): Promise<PaymentStatus> {

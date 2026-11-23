@@ -1,0 +1,57 @@
+{
+  "name": "@ethio-pay/sms",
+  "version": "0.1.0-beta.0",
+  "description": "Unified Ethiopian SMS & OTP delivery engine with automated gateway cascading (AfroMessage, GeeZ SMS, Ethio Telecom)",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Masud-Wubetu/Ethio-Pay.git",
+    "directory": "packages/sms"
+  },
+  "keywords": [
+    "ethio-pay",
+    "ethiopia",
+    "sms",
+    "otp",
+    "afromessage",
+    "geezsms",
+    "ethio-telecom",
+    "failover",
+    "resilience"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ethio-pay/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
+

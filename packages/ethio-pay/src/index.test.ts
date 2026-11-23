@@ -8,6 +8,10 @@ import {
   CbeBirrAdapter,
   ArifPayAdapter,
   AwashBirrAdapter,
+  EthiopianSms,
+  AfroMessageAdapter,
+  GeezSmsAdapter,
+  EthioTelecomSmsAdapter,
   PaymentError,
   createIdempotencyMiddleware,
   ETHIO_PAY_VERSION,
@@ -44,6 +48,10 @@ describe('ethio-pay umbrella package', () => {
     expect(typeof CbeBirrAdapter).toBe('function');
     expect(typeof ArifPayAdapter).toBe('function');
     expect(typeof AwashBirrAdapter).toBe('function');
+    expect(typeof EthiopianSms).toBe('function');
+    expect(typeof AfroMessageAdapter).toBe('function');
+    expect(typeof GeezSmsAdapter).toBe('function');
+    expect(typeof EthioTelecomSmsAdapter).toBe('function');
     expect(typeof createIdempotencyMiddleware).toBe('function');
   });
 

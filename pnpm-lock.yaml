@@ -146,6 +146,9 @@ importers:
       '@ethio-pay/santimpay':
         specifier: workspace:*
         version: link:../santimpay
+      '@ethio-pay/sms':
+        specifier: workspace:*
+        version: link:../sms
       '@ethio-pay/telebirr':
         specifier: workspace:*
         version: link:../telebirr
@@ -189,6 +192,19 @@ importers:
         version: 5.9.3
 
   packages/santimpay:
+    dependencies:
+      '@ethio-pay/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.0.2
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.29)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/sms:
     dependencies:
       '@ethio-pay/core':
         specifier: workspace:*

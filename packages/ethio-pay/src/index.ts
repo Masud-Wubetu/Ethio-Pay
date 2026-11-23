@@ -9,4 +9,7 @@ export * from '@ethio-pay/cbebirr';
 export * from '@ethio-pay/arifpay';
 export * from '@ethio-pay/awashbirr';
 
+// Re-export unified Ethiopian SMS & OTP engine
+export * from '@ethio-pay/sms';
+
 export const ETHIO_PAY_VERSION = '0.1.0';

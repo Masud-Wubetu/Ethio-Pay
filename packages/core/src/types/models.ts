@@ -8,6 +8,7 @@ export interface CustomerInfo {
 
 export interface InitRequest {
   provider: string;
+  fallbackProviders?: string[];
   amount: number;
   currency: string;
   reference: string;

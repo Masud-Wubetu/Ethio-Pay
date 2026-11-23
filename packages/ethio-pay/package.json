@@ -50,6 +50,7 @@
     "@ethio-pay/chapa": "workspace:*",
     "@ethio-pay/core": "workspace:*",
     "@ethio-pay/santimpay": "workspace:*",
+    "@ethio-pay/sms": "workspace:*",
     "@ethio-pay/telebirr": "workspace:*"
   },
   "devDependencies": {
