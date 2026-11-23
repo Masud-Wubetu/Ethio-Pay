@@ -374,7 +374,7 @@ export class SandboxServer {
 
     // Emulate Telebirr Fabric toTradeWebPay endpoint
     this.app.post('/ammapi/payment/service-openup/toTradeWebPay', (req: Request, res: Response) => {
-      const { appid, sign, ussd } = req.body || {};
+      const { ussd } = req.body || {};
 
       let fabricParams: Record<string, any>;
       try {
@@ -433,7 +433,7 @@ export class SandboxServer {
     // Emulate Telebirr queryOrder endpoint
     this.app.post('/ammapi/payment/service-openup/queryOrder', (req: Request, res: Response) => {
       let queryParams: Record<string, any>;
-      const { appid, sign, ussd } = req.body || {};
+      const { ussd } = req.body || {};
 
       try {
         if (ussd) {

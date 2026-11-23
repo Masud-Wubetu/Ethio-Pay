@@ -12,6 +12,7 @@
   "dependencies": {
     "@ethio-pay/chapa": "workspace:*",
     "@ethio-pay/core": "workspace:*",
+    "@ethio-pay/telebirr": "workspace:*",
     "express": "^4.19.2"
   },
   "devDependencies": {

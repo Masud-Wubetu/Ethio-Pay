@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import crypto from 'node:crypto';
-import { Status, PaymentError, PaymentErrorCode } from '@ethio-pay/core';
+import { Status } from '@ethio-pay/core';
 import { TelebirrAdapter } from './adapter.js';
 import {
   createCanonicalString,

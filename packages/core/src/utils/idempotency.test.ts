@@ -33,7 +33,7 @@ describe('createIdempotencyMiddleware', () => {
       headers: {},
     };
 
-    let statusCode = 200;
+    const statusCode = 200;
     const res: any = {
       statusCode,
       status: (code: number) => {

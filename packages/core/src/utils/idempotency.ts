@@ -1,4 +1,3 @@
-import { PaymentError, PaymentErrorCode } from '../types/errors.js';
 
 export interface IdempotencyStore {
   has(key: string): Promise<boolean> | boolean;
@@ -46,11 +45,21 @@ export function createIdempotencyMiddleware(
 
       if (!key) {
         if (typeof req.body === 'object' && req.body !== null) {
-          key = req.body.tx_ref || req.body.reference || req.body.data?.tx_ref;
+          key =
+            req.body.tx_ref ||
+            req.body.reference ||
+            req.body.outTradeNo ||
+            req.body.tradeNo ||
+            req.body.data?.tx_ref;
         } else if (typeof req.body === 'string') {
           try {
             const parsed = JSON.parse(req.body);
-            key = parsed.tx_ref || parsed.reference || parsed.data?.tx_ref;
+            key =
+              parsed.tx_ref ||
+              parsed.reference ||
+              parsed.outTradeNo ||
+              parsed.tradeNo ||
+              parsed.data?.tx_ref;
           } catch {
             // ignore
           }

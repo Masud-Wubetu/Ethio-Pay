@@ -38,23 +38,33 @@ npm install @ethio-pay/core @ethio-pay/chapa @ethio-pay/telebirr
 ```typescript
 import { EthiopianPayments, ChapaAdapter, TelebirrAdapter } from 'ethio-pay';
 
-// Configure Chapa adapter
+// 1. Configure Chapa adapter (HMAC-SHA256)
 const chapa = new ChapaAdapter({
   secretKey: process.env.CHAPA_SECRET_KEY!,
   secretHash: process.env.CHAPA_SECRET_HASH!,
 });
 
-// Configure Ethio-Pay client
+// 2. Configure Telebirr adapter (RSA-OAEP & RSA-SHA256)
+const telebirr = new TelebirrAdapter({
+  appId: process.env.TELEBIRR_APP_ID!,
+  appKey: process.env.TELEBIRR_APP_KEY!,
+  shortCode: process.env.TELEBIRR_SHORT_CODE!,
+  publicKey: process.env.TELEBIRR_PUBLIC_KEY!, // Telebirr server public key
+  privateKey: process.env.MERCHANT_PRIVATE_KEY!, // Merchant RSA private key
+});
+
+// 3. Configure Unified Ethio-Pay client with both providers
 const sdk = new EthiopianPayments({
-  providers: [chapa],
+  providers: [chapa, telebirr],
 });
 ```
 
 ### 3. Create a Payment Session
 
 ```typescript
+// Seamlessly route to Chapa or Telebirr by provider name
 const session = await sdk.initialize({
-  provider: 'chapa',
+  provider: 'telebirr', // or 'chapa'
   amount: 250,
   currency: 'ETB',
   reference: `TX-${Date.now()}`,
@@ -64,7 +74,7 @@ const session = await sdk.initialize({
     phoneNumber: '0911234567',
   },
   returnUrl: 'https://my-store.com/success',
-  callbackUrl: 'https://my-store.com/api/webhooks/chapa',
+  callbackUrl: 'https://my-store.com/api/webhooks/telebirr',
 });
 
 // Redirect customer to checkout URL
@@ -79,7 +89,7 @@ import { createIdempotencyMiddleware } from '@ethio-pay/core';
 
 const app = express();
 
-// Use express.text to keep raw body for signature verification
+// Chapa Webhook Receiver (HMAC-SHA256)
 app.post(
   '/api/webhooks/chapa',
   express.text({ type: '*/*' }),
@@ -88,7 +98,7 @@ app.post(
     const rawBody = req.body;
     const headers = req.headers;
 
-    // 1. Constant-time HMAC-SHA256 signature verification
+    // 1. Constant-time HMAC signature verification
     sdk.webhooks.verify('chapa', rawBody, headers);
 
     // 2. Parse normalized PaymentEvent
@@ -102,6 +112,30 @@ app.post(
     return res.status(200).json({ status: 'success' });
   }
 );
+
+// Telebirr Webhook Receiver (RSA-SHA256)
+app.post(
+  '/api/webhooks/telebirr',
+  express.text({ type: '*/*' }),
+  createIdempotencyMiddleware(),
+  (req, res) => {
+    const rawBody = req.body;
+    const headers = req.headers;
+
+    // 1. Asymmetric RSA digital signature verification
+    sdk.webhooks.verify('telebirr', rawBody, headers);
+
+    // 2. Parse normalized PaymentEvent
+    const event = sdk.webhooks.parse('telebirr', rawBody, headers);
+
+    if (event.type === 'payment.succeeded') {
+      console.log(`Telebirr Payment ${event.reference} of ${event.amount} ETB succeeded!`);
+      // Fulfill customer order
+    }
+
+    return res.status(200).json({ code: 0, msg: 'success' });
+  }
+);
 ```
 
 ---
@@ -111,7 +145,11 @@ app.post(
 Develop and test webhooks locally on your laptop **without live keys or internet access**:
 
 ```bash
-npx ethio-pay-sandbox --target http://localhost:3000/api/webhooks/chapa --provider chapa
+# Simulate Telebirr Fabric gateway & RSA webhooks
+npx ethio-pay-sandbox --provider telebirr --target http://localhost:3000/api/webhooks/telebirr
+
+# Or simulate Chapa gateway & HMAC webhooks
+npx ethio-pay-sandbox --provider chapa --target http://localhost:3000/api/webhooks/chapa
 ```
 
 1. Opens an interactive checkout dashboard at `http://localhost:4040/checkout/:reference`.
