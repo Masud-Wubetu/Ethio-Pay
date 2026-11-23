@@ -65,6 +65,45 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  packages/arifpay:
+    dependencies:
+      '@ethio-pay/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.0.2
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.29)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/awashbirr:
+    dependencies:
+      '@ethio-pay/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.0.2
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.29)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/cbebirr:
+    dependencies:
+      '@ethio-pay/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.0.2
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.29)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
   packages/chapa:
     dependencies:
       '@ethio-pay/core':
@@ -89,12 +128,24 @@ importers:
 
   packages/ethio-pay:
     dependencies:
+      '@ethio-pay/arifpay':
+        specifier: workspace:*
+        version: link:../arifpay
+      '@ethio-pay/awashbirr':
+        specifier: workspace:*
+        version: link:../awashbirr
+      '@ethio-pay/cbebirr':
+        specifier: workspace:*
+        version: link:../cbebirr
       '@ethio-pay/chapa':
         specifier: workspace:*
         version: link:../chapa
       '@ethio-pay/core':
         specifier: workspace:*
         version: link:../core
+      '@ethio-pay/santimpay':
+        specifier: workspace:*
+        version: link:../santimpay
       '@ethio-pay/telebirr':
         specifier: workspace:*
         version: link:../telebirr
@@ -130,6 +181,19 @@ importers:
       '@types/express':
         specifier: ^4.17.21
         version: 4.17.25
+      tsup:
+        specifier: ^8.0.2
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.29)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/santimpay:
+    dependencies:
+      '@ethio-pay/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
       tsup:
         specifier: ^8.0.2
         version: 8.5.1(jiti@1.21.7)(postcss@8.5.29)(typescript@5.9.3)

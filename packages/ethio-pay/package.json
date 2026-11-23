@@ -44,8 +44,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ethio-pay/arifpay": "workspace:*",
+    "@ethio-pay/awashbirr": "workspace:*",
+    "@ethio-pay/cbebirr": "workspace:*",
     "@ethio-pay/chapa": "workspace:*",
     "@ethio-pay/core": "workspace:*",
+    "@ethio-pay/santimpay": "workspace:*",
     "@ethio-pay/telebirr": "workspace:*"
   },
   "devDependencies": {

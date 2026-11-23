@@ -26,7 +26,7 @@ Usage:
 
 Options:
   --target, -t    Target webhook URL to deliver signed webhooks
-  --provider, -p  Provider adapter to emulate (chapa, telebirr)
+  --provider, -p  Provider adapter to emulate (chapa, telebirr, santimpay, cbebirr, arifpay, awashbirr)
   --port, -P      Local port to run sandbox server on (default: 4040)
   --secret, -s    HMAC secret hash for webhook signing
   --help, -h      Display this help message

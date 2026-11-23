@@ -16,8 +16,13 @@ Ethio-Pay is a modern TypeScript/Node.js monorepo providing:
 | [`@ethio-pay/core`](./packages/core) | `0.1.0` | Core domain types, `PaymentProvider` contract, `HttpClient` with retry/backoff, and `Idempotency` middleware |
 | [`@ethio-pay/chapa`](./packages/chapa) | `0.1.0` | Chapa Payment Provider Adapter implementation |
 | [`@ethio-pay/telebirr`](./packages/telebirr) | `0.1.0` | Telebirr Fabric & H5 Payment Provider Adapter implementation |
+| [`@ethio-pay/santimpay`](./packages/santimpay) | `0.1.0` | SantimPay Payment Provider Adapter implementation |
+| [`@ethio-pay/cbebirr`](./packages/cbebirr) | `0.1.0` | CBE Birr (Commercial Bank of Ethiopia) Payment Provider Adapter |
+| [`@ethio-pay/arifpay`](./packages/arifpay) | `0.1.0` | ArifPay Payment Provider Adapter implementation |
+| [`@ethio-pay/awashbirr`](./packages/awashbirr) | `0.1.0` | Awash Birr (Awash Bank) Payment Provider Adapter implementation |
 | [`@ethio-pay/sandbox`](./packages/sandbox) | `0.1.0` | Local Webhook Simulator server & `ethio-pay-sandbox` CLI binary |
 | [`@ethio-pay/example-express`](./examples/express) | `0.1.0` | Express reference application showing end-to-end SDK & webhook integration |
+| [`@ethio-pay/example-nextjs`](./examples/nextjs) | `0.1.0` | Next.js App Router reference webhook handler (`route.ts`) |
 
 ---
 

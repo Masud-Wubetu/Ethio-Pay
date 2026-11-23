@@ -130,6 +130,9 @@ export class SandboxServer {
     const payload = {
       event: targetStatus === 'SUCCEEDED' ? 'charge.success' : 'charge.failed',
       tx_ref: reference,
+      reference,
+      orderId: reference,
+      id: reference,
       amount: tx?.amount || 100,
       currency: tx?.currency || 'ETB',
       status: rawStatus,
@@ -150,9 +153,20 @@ export class SandboxServer {
       await new Promise((resolve) => setTimeout(resolve, options.delayMs));
     }
 
+    const signatureHeaderName =
+      provider === 'santimpay'
+        ? 'x-santimpay-signature'
+        : provider === 'cbebirr'
+        ? 'x-cbebirr-signature'
+        : provider === 'arifpay'
+        ? 'x-arifpay-signature'
+        : provider === 'awashbirr'
+        ? 'x-awashbirr-signature'
+        : 'x-chapa-signature';
+
     const headers: Record<string, string> = {
       'content-type': 'application/json',
-      'x-chapa-signature': signature,
+      [signatureHeaderName]: signature,
     };
 
     let responseStatus = 0;
