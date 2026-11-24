@@ -9,6 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:manual": "node scripts/test-all-providers.mjs",
+    "demo": "node scripts/start-demo.mjs",
     "lint": "eslint ."
   },
   "devDependencies": {

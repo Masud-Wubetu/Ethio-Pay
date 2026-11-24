@@ -23,15 +23,33 @@ importers:
 
   examples/express:
     dependencies:
+      '@ethio-pay/arifpay':
+        specifier: workspace:*
+        version: link:../../packages/arifpay
+      '@ethio-pay/awashbirr':
+        specifier: workspace:*
+        version: link:../../packages/awashbirr
+      '@ethio-pay/cbebirr':
+        specifier: workspace:*
+        version: link:../../packages/cbebirr
       '@ethio-pay/chapa':
         specifier: workspace:*
         version: link:../../packages/chapa
       '@ethio-pay/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@ethio-pay/santimpay':
+        specifier: workspace:*
+        version: link:../../packages/santimpay
+      '@ethio-pay/sms':
+        specifier: workspace:*
+        version: link:../../packages/sms
       '@ethio-pay/telebirr':
         specifier: workspace:*
         version: link:../../packages/telebirr
+      ethio-pay:
+        specifier: workspace:*
+        version: link:../../packages/ethio-pay
       express:
         specifier: ^4.19.2
         version: 4.22.3
