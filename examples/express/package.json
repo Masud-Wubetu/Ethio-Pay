@@ -10,9 +10,15 @@
     "dev": "tsup src/server.ts --format esm --watch"
   },
   "dependencies": {
-    "@ethio-pay/chapa": "workspace:*",
+    "ethio-pay": "workspace:*",
     "@ethio-pay/core": "workspace:*",
+    "@ethio-pay/chapa": "workspace:*",
     "@ethio-pay/telebirr": "workspace:*",
+    "@ethio-pay/cbebirr": "workspace:*",
+    "@ethio-pay/arifpay": "workspace:*",
+    "@ethio-pay/santimpay": "workspace:*",
+    "@ethio-pay/awashbirr": "workspace:*",
+    "@ethio-pay/sms": "workspace:*",
     "express": "^4.19.2"
   },
   "devDependencies": {

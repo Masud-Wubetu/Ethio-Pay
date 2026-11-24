@@ -56,8 +56,9 @@ export class EthiopianSms {
       });
     }
 
+    const cleanTo = Array.isArray(req.to) ? req.to.map((t) => t.trim()).join(',') : String(req.to).trim();
     const payload: SendSmsRequest = {
-      to: req.to.trim(),
+      to: cleanTo,
       message: req.message,
       senderId: req.senderId || this.defaultSenderId,
       templateId: req.templateId,

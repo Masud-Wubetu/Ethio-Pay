@@ -3,6 +3,10 @@ import crypto from 'node:crypto';
 import { EthiopianPayments, createIdempotencyMiddleware } from '@ethio-pay/core';
 import { ChapaAdapter } from '@ethio-pay/chapa';
 import { TelebirrAdapter } from '@ethio-pay/telebirr';
+import { CbeBirrAdapter } from '@ethio-pay/cbebirr';
+import { ArifPayAdapter } from '@ethio-pay/arifpay';
+import { SantimPayAdapter } from '@ethio-pay/santimpay';
+import { AwashBirrAdapter } from '@ethio-pay/awashbirr';
 
 export const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,10 +43,46 @@ export let telebirrAdapter = new TelebirrAdapter({
   baseUrl: SANDBOX_URL,
 });
 
-// 3. Configure Unified Ethio-Pay SDK with multiple providers
+// 3. Configure CBE Birr, ArifPay, SantimPay, and Awash Birr adapters
+export const cbeBirrAdapter = new CbeBirrAdapter({
+  tillCode: process.env.CBEBIRR_TILL_CODE || '001',
+  apiKey: process.env.CBEBIRR_API_KEY || 'test_cbe_key_123',
+  secretHash: process.env.CBEBIRR_SECRET_HASH || 'sandbox_secret_hash_123',
+  baseUrl: SANDBOX_URL,
+});
+
+export const arifPayAdapter = new ArifPayAdapter({
+  apiKey: process.env.ARIFPAY_API_KEY || 'test_arifpay_key_123',
+  secretKey: process.env.ARIFPAY_SECRET_KEY || 'sandbox_secret_hash_123',
+  baseUrl: SANDBOX_URL,
+});
+
+export const santimPayAdapter = new SantimPayAdapter({
+  merchantId: process.env.SANTIMPAY_MERCHANT_ID || 'test_merchant_id',
+  authToken: process.env.SANTIMPAY_AUTH_TOKEN || 'test_token_123',
+  clientSecret: process.env.SANTIMPAY_CLIENT_SECRET || 'sandbox_secret_hash_123',
+  baseUrl: SANDBOX_URL,
+});
+
+export const awashBirrAdapter = new AwashBirrAdapter({
+  merchantId: process.env.AWASHBIRR_MERCHANT_ID || 'test_awash_merchant',
+  passKey: process.env.AWASHBIRR_PASS_KEY || 'test_passkey_123',
+  secretHash: process.env.AWASHBIRR_SECRET_HASH || 'sandbox_secret_hash_123',
+  baseUrl: SANDBOX_URL,
+});
+
+// 4. Configure Unified Ethio-Pay SDK with all 6 providers + smart failover
 export const sdk = new EthiopianPayments({
   environment: 'sandbox',
-  providers: [chapaAdapter, telebirrAdapter],
+  providers: [
+    chapaAdapter,
+    telebirrAdapter,
+    cbeBirrAdapter,
+    arifPayAdapter,
+    santimPayAdapter,
+    awashBirrAdapter,
+  ],
+  defaultFallbackProviders: ['telebirr', 'arifpay'],
 });
 
 // Sync ephemeral RSA public key from the running sandbox server
@@ -165,6 +205,52 @@ app.post(
   }
 );
 
+// Generic Multi-Provider Webhook Endpoint
+app.post(
+  '/api/webhooks/:provider',
+  express.text({ type: '*/*' }),
+  createIdempotencyMiddleware(),
+  (req: Request, res: Response) => {
+    const provider = req.params.provider.toLowerCase();
+    try {
+      const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      const headers = req.headers as Record<string, string | string[] | undefined>;
+
+      // Signature verification
+      sdk.webhooks.verify(provider, rawBody, headers);
+
+      // Parse normalized PaymentEvent
+      const event = sdk.webhooks.parse(provider, rawBody, headers);
+
+      console.log(
+        `[Merchant App] Verified ${provider} webhook: ${event.type} for reference ${event.reference}`
+      );
+
+      if (event.type === 'payment.succeeded') {
+        console.log(
+          `[Merchant App] 🎉 ${provider} payment ${event.reference} of ${event.amount} ${event.currency} succeeded! Fulfilling order...`
+        );
+      } else if (event.type === 'payment.failed') {
+        console.log(`[Merchant App] ❌ ${provider} payment ${event.reference} failed.`);
+      }
+
+      return res.status(200).json({
+        code: 0,
+        status: 'success',
+        message: `${provider} webhook processed successfully`,
+        reference: event.reference,
+      });
+    } catch (err: any) {
+      console.error(`[Merchant App] ${provider} webhook error: ${err.message}`);
+      return res.status(err.httpStatus || 400).json({
+        code: 400,
+        status: 'failed',
+        message: err.message,
+      });
+    }
+  }
+);
+
 // -------------------------------------------------------------
 // Application JSON API Endpoints
 // -------------------------------------------------------------
@@ -175,11 +261,7 @@ app.post('/api/checkout', async (req: Request, res: Response) => {
   try {
     const { provider = 'chapa', amount, currency, reference, customer } = req.body;
     const selectedProvider = String(provider).toLowerCase();
-
-    const callbackUrl =
-      selectedProvider === 'telebirr'
-        ? `http://localhost:${PORT}/api/webhooks/telebirr`
-        : `http://localhost:${PORT}/api/webhooks/chapa`;
+    const callbackUrl = `http://localhost:${PORT}/api/webhooks/${selectedProvider}`;
 
     const session = await sdk.initialize({
       provider: selectedProvider,
@@ -274,19 +356,35 @@ app.get('/', (_req: Request, res: Response) => {
           <div class="header">
             <span class="badge">Ethio-Pay Demo Store</span>
             <h1>Multi-Provider Checkout</h1>
-            <p class="subtitle">Experience unified payments with Chapa & Telebirr side-by-side.</p>
+            <p class="subtitle">Experience unified Ethiopian payments across 6 providers side-by-side.</p>
           </div>
 
           <div class="form-card">
             <label>Select Payment Provider</label>
-            <div class="provider-grid">
+            <div class="provider-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
               <div id="card-chapa" class="provider-card selected" onclick="selectProvider('chapa')">
                 <div class="provider-title" style="color: #34d399;">Chapa</div>
-                <div class="provider-sub">Cards & Mobile Wallets</div>
+                <div class="provider-sub">Cards & Wallets</div>
               </div>
               <div id="card-telebirr" class="provider-card" onclick="selectProvider('telebirr')">
                 <div class="provider-title" style="color: #38bdf8;">Telebirr</div>
-                <div class="provider-sub">Fabric H5 / USSD Quick PIN</div>
+                <div class="provider-sub">Fabric / H5</div>
+              </div>
+              <div id="card-cbebirr" class="provider-card" onclick="selectProvider('cbebirr')">
+                <div class="provider-title" style="color: #c084fc;">CBE Birr</div>
+                <div class="provider-sub">Direct Bank API</div>
+              </div>
+              <div id="card-arifpay" class="provider-card" onclick="selectProvider('arifpay')">
+                <div class="provider-title" style="color: #818cf8;">ArifPay</div>
+                <div class="provider-sub">Gateway Rail</div>
+              </div>
+              <div id="card-santimpay" class="provider-card" onclick="selectProvider('santimpay')">
+                <div class="provider-title" style="color: #10b981;">SantimPay</div>
+                <div class="provider-sub">Instant Pay</div>
+              </div>
+              <div id="card-awashbirr" class="provider-card" onclick="selectProvider('awashbirr')">
+                <div class="provider-title" style="color: #fb7185;">Awash Birr</div>
+                <div class="provider-sub">Wallet Checkout</div>
               </div>
             </div>
 
@@ -309,21 +407,32 @@ app.get('/', (_req: Request, res: Response) => {
 
             <div class="meta-info">
               <strong>Active Webhook Endpoints:</strong><br />
-              • Chapa: <code>POST /api/webhooks/chapa</code> (HMAC-SHA256)<br />
-              • Telebirr: <code>POST /api/webhooks/telebirr</code> (RSA-SHA256)<br />
-              • Idempotency Middleware Active: Duplicate prevention enabled
+              • Multi-Rail: <code>POST /api/webhooks/:provider</code> (HMAC / RSA verified)<br />
+              • Idempotency Middleware Active: Duplicate prevention enabled<br />
+              • Automatic Failover: Configured with candidate backup gateways
             </div>
           </div>
         </div>
 
         <script>
           let currentProvider = 'chapa';
+          const providers = ['chapa', 'telebirr', 'cbebirr', 'arifpay', 'santimpay', 'awashbirr'];
 
           function selectProvider(provider) {
             currentProvider = provider;
-            document.getElementById('card-chapa').classList.toggle('selected', provider === 'chapa');
-            document.getElementById('card-telebirr').classList.toggle('selected', provider === 'telebirr');
-            document.getElementById('payBtn').innerText = provider === 'telebirr' ? 'Pay with Telebirr →' : 'Pay with Chapa →';
+            providers.forEach(p => {
+              const el = document.getElementById('card-' + p);
+              if (el) el.classList.toggle('selected', p === provider);
+            });
+            const names = {
+              chapa: 'Chapa',
+              telebirr: 'Telebirr',
+              cbebirr: 'CBE Birr',
+              arifpay: 'ArifPay',
+              santimpay: 'SantimPay',
+              awashbirr: 'Awash Birr'
+            };
+            document.getElementById('payBtn').innerText = 'Pay with ' + (names[provider] || provider) + ' →';
           }
 
           async function initiatePayment() {

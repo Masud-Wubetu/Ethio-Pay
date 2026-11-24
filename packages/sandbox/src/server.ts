@@ -537,6 +537,207 @@ export class SandboxServer {
     });
 
     // ------------------------------------------------------------------------
+    // MOCK ENDPOINTS FOR CBE BIRR, ARIFPAY, SANTIMPAY, AWASH BIRR & SMS
+    // ------------------------------------------------------------------------
+    // CBE Birr Checkout & Query
+    this.app.post('/cbe/payment/v1/checkout', (req: Request, res: Response) => {
+      const { reference, amount, currency, callbackUrl, returnUrl, customerPhone, customerName } = req.body || {};
+      const ref = reference || `cbe_${Date.now()}`;
+      const record: TransactionRecord = {
+        reference: ref,
+        amount: Number(amount) || 100,
+        currency: currency || 'ETB',
+        phone: customerPhone,
+        firstName: customerName,
+        callbackUrl,
+        returnUrl,
+        status: 'PENDING',
+        provider: 'cbebirr',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      this.transactions.set(ref, record);
+      return res.json({
+        code: 200,
+        message: 'Payment initiated successfully',
+        checkoutUrl: `http://localhost:${this.port}/checkout/${encodeURIComponent(ref)}`,
+        conversationId: `cbe_conv_${Date.now()}`,
+        transactionReference: ref,
+      });
+    });
+
+    this.app.get('/cbe/payment/v1/query/:ref', (req: Request, res: Response) => {
+      const tx = this.transactions.get(req.params.ref);
+      if (!tx) {
+        return res.status(404).json({ code: 404, message: 'Transaction not found' });
+      }
+      return res.json({
+        code: 200,
+        message: 'Transaction query successful',
+        status: tx.status === 'SUCCEEDED' ? 'SUCCESS' : tx.status === 'FAILED' ? 'FAILED' : 'PENDING',
+        transactionStatus: tx.status === 'SUCCEEDED' ? 'COMPLETED' : tx.status === 'FAILED' ? 'FAILED' : 'PENDING',
+        amount: tx.amount,
+        currency: tx.currency,
+        transactionId: `cbe_tx_${Date.now()}`,
+        orderId: tx.reference,
+        timestamp: tx.updatedAt,
+      });
+    });
+
+    // ArifPay Checkout & Query
+    this.app.post('/api/sandbox/checkout/session', (req: Request, res: Response) => {
+      const { beneficiaries, notifyUrl, successUrl } = req.body || {};
+      const ref = beneficiaries?.[0]?.accountNumber || `arif_${Date.now()}`;
+      const amount = beneficiaries?.[0]?.amount || 100;
+      const record: TransactionRecord = {
+        reference: ref,
+        amount: Number(amount),
+        currency: 'ETB',
+        callbackUrl: notifyUrl,
+        returnUrl: successUrl,
+        status: 'PENDING',
+        provider: 'arifpay',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      this.transactions.set(ref, record);
+      const checkoutUrl = `http://localhost:${this.port}/checkout/${encodeURIComponent(ref)}`;
+      return res.json({
+        error: false,
+        msg: 'Session created successfully',
+        data: {
+          sessionId: ref,
+          paymentUrl: checkoutUrl,
+          checkoutUrl,
+          totalAmount: amount,
+        },
+      });
+    });
+
+    this.app.get('/api/sandbox/checkout/session/:sessionId', (req: Request, res: Response) => {
+      const tx = this.transactions.get(req.params.sessionId);
+      if (!tx) {
+        return res.status(404).json({ error: true, msg: 'Session not found' });
+      }
+      return res.json({
+        error: false,
+        data: {
+          sessionId: tx.reference,
+          status: tx.status === 'SUCCEEDED' ? 'SUCCESS' : tx.status === 'FAILED' ? 'FAILED' : 'PENDING',
+          transactionStatus: tx.status === 'SUCCEEDED' ? 'COMPLETED' : tx.status === 'FAILED' ? 'FAILED' : 'PENDING',
+          totalAmount: tx.amount,
+          orderId: tx.reference,
+        },
+      });
+    });
+
+    // SantimPay Checkout & Query
+    this.app.post('/api/v1/gateway/initiate-payment', (req: Request, res: Response) => {
+      const { id, amount, notifyUrl, successRedirectUrl, phoneNumber } = req.body || {};
+      const ref = id || `santim_${Date.now()}`;
+      const record: TransactionRecord = {
+        reference: ref,
+        amount: Number(amount) || 100,
+        currency: 'ETB',
+        phone: phoneNumber,
+        callbackUrl: notifyUrl,
+        returnUrl: successRedirectUrl,
+        status: 'PENDING',
+        provider: 'santimpay',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      this.transactions.set(ref, record);
+      const checkoutUrl = `http://localhost:${this.port}/checkout/${encodeURIComponent(ref)}`;
+      return res.json({
+        status: 'SUCCESS',
+        message: 'Payment initiation successful',
+        url: checkoutUrl,
+        paymentUrl: checkoutUrl,
+      });
+    });
+
+    this.app.get('/api/v1/gateway/payment-status/:ref', (req: Request, res: Response) => {
+      const tx = this.transactions.get(req.params.ref);
+      if (!tx) {
+        return res.status(404).json({ status: 'FAILED', message: 'Transaction not found' });
+      }
+      return res.json({
+        status: 'SUCCESS',
+        paymentStatus: tx.status === 'SUCCEEDED' ? 'COMPLETED' : tx.status === 'FAILED' ? 'FAILED' : 'PENDING',
+        transactionStatus: tx.status === 'SUCCEEDED' ? 'COMPLETED' : tx.status === 'FAILED' ? 'FAILED' : 'PENDING',
+        amount: tx.amount,
+        currency: tx.currency,
+        reference: tx.reference,
+        id: tx.reference,
+        paymentDate: tx.updatedAt,
+      });
+    });
+
+    // Awash Birr Checkout & Query
+    this.app.post('/awash/payment/v1/initiate', (req: Request, res: Response) => {
+      const { reference, amount, currency, callbackUrl, returnUrl, customerPhone } = req.body || {};
+      const ref = reference || `awash_${Date.now()}`;
+      const record: TransactionRecord = {
+        reference: ref,
+        amount: Number(amount) || 100,
+        currency: currency || 'ETB',
+        phone: customerPhone,
+        callbackUrl,
+        returnUrl,
+        status: 'PENDING',
+        provider: 'awashbirr',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      this.transactions.set(ref, record);
+      return res.json({
+        statusCode: 200,
+        message: 'Payment checkout initiated',
+        checkoutUrl: `http://localhost:${this.port}/checkout/${encodeURIComponent(ref)}`,
+        paymentUrl: `http://localhost:${this.port}/checkout/${encodeURIComponent(ref)}`,
+        transactionRef: ref,
+      });
+    });
+
+    this.app.get('/awash/payment/v1/status/:ref', (req: Request, res: Response) => {
+      const tx = this.transactions.get(req.params.ref);
+      if (!tx) {
+        return res.status(404).json({ statusCode: 404, message: 'Transaction not found' });
+      }
+      return res.json({
+        statusCode: 200,
+        message: 'Status query successful',
+        status: tx.status === 'SUCCEEDED' ? 'SUCCESS' : tx.status === 'FAILED' ? 'FAILED' : 'PENDING',
+        amount: tx.amount,
+        currency: tx.currency,
+        transactionId: `awash_tx_${Date.now()}`,
+        reference: tx.reference,
+      });
+    });
+
+    // SMS Providers Simulation (AfroMessage, GeeZ SMS, Ethio Telecom)
+    this.app.post('/api/send', (req: Request, res: Response) => {
+      return res.json({
+        acknowledge: 'success',
+        response: {
+          message_id: `msg_afro_${Date.now()}`,
+          status: 'delivered',
+        },
+      });
+    });
+
+    this.app.post('/api/v1/sms/send', (req: Request, res: Response) => {
+      return res.json({
+        status: 'success',
+        data: {
+          messageId: `msg_sms_${Date.now()}`,
+          sent: true,
+        },
+      });
+    });
+
+    // ------------------------------------------------------------------------
     // 1. REALISTIC CUSTOMER-FACING CHECKOUT UI (/checkout/:ref)
     // ------------------------------------------------------------------------
     this.app.get('/checkout/:ref', (req: Request, res: Response) => {
@@ -544,11 +745,31 @@ export class SandboxServer {
       const tx = this.transactions.get(ref);
       const effectiveProvider = (tx?.provider || this.provider).toLowerCase();
       const isTelebirr = effectiveProvider === 'telebirr';
-      const brandTitle = isTelebirr ? 'TELEBIRR' : 'CHAPA';
-      const brandColor = isTelebirr ? '#0072ce' : '#38bdf8';
-      const gradientBtn = isTelebirr
-        ? 'linear-gradient(135deg, #0072ce 0%, #00569a 100%)'
-        : 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+      let brandTitle = 'CHAPA';
+      let brandColor = '#38bdf8';
+      let gradientBtn = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+
+      if (effectiveProvider === 'telebirr') {
+        brandTitle = 'TELEBIRR';
+        brandColor = '#0072ce';
+        gradientBtn = 'linear-gradient(135deg, #0072ce 0%, #00569a 100%)';
+      } else if (effectiveProvider === 'cbebirr') {
+        brandTitle = 'CBE BIRR';
+        brandColor = '#a855f7';
+        gradientBtn = 'linear-gradient(135deg, #9333ea 0%, #6b21a8 100%)';
+      } else if (effectiveProvider === 'arifpay') {
+        brandTitle = 'ARIFPAY';
+        brandColor = '#6366f1';
+        gradientBtn = 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)';
+      } else if (effectiveProvider === 'santimpay') {
+        brandTitle = 'SANTIMPAY';
+        brandColor = '#10b981';
+        gradientBtn = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+      } else if (effectiveProvider === 'awashbirr') {
+        brandTitle = 'AWASH BIRR';
+        brandColor = '#f43f5e';
+        gradientBtn = 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)';
+      }
 
       const html = `
 <!DOCTYPE html>
