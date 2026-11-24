@@ -327,89 +327,331 @@ app.get('/', (_req: Request, res: Response) => {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Ethio-Pay Multi-Provider Demo</title>
+        <title>Habesha Coffee Roasters — Ethio-Pay Multi-Rail Checkout</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
         <style>
-          :root { --primary: #2563eb; --telebirr: #0284c7; --chapa: #059669; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; display: flex; justify-content: center; }
-          .container { width: 100%; max-width: 540px; }
-          .header { text-align: center; margin-bottom: 2rem; }
-          .badge { display: inline-block; background: #1e293b; border: 1px solid #334155; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; color: #38bdf8; margin-bottom: 0.5rem; }
-          h1 { margin: 0; font-size: 1.8rem; font-weight: 700; color: #f8fafc; }
-          p.subtitle { color: #94a3b8; font-size: 0.95rem; margin-top: 0.5rem; }
-          .form-card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 1.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4); }
-          .field { margin-bottom: 1.25rem; }
-          label { display: block; font-size: 0.85rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
-          input, select { width: 100%; box-sizing: border-box; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #f8fafc; font-size: 1rem; }
-          input:focus, select:focus { outline: none; border-color: var(--primary); }
-          .provider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
-          .provider-card { border: 2px solid #334155; border-radius: 0.75rem; padding: 1rem; cursor: pointer; text-align: center; transition: all 0.2s; background: #0f172a; }
-          .provider-card.selected { border-color: #38bdf8; background: rgba(56, 189, 248, 0.08); }
-          .provider-title { font-weight: 700; font-size: 1.1rem; }
-          .provider-sub { font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; }
-          .btn-pay { width: 100%; padding: 0.9rem; background: var(--primary); color: #fff; font-size: 1.05rem; font-weight: 600; border: none; border-radius: 0.5rem; cursor: pointer; transition: background 0.2s; }
-          .btn-pay:hover { opacity: 0.92; }
-          .meta-info { margin-top: 1.5rem; padding: 1rem; border-radius: 0.5rem; background: #0f172a; border: 1px dashed #334155; font-size: 0.8rem; color: #94a3b8; }
+          :root {
+            --primary: #2563eb;
+            --bg: #070a12;
+            --card-bg: rgba(18, 25, 41, 0.85);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #f8fafc;
+            --muted: #94a3b8;
+          }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at 50% 0%, #151d30 0%, #070a12 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+          }
+          .store-wrapper {
+            width: 100%;
+            max-width: 900px;
+          }
+          .store-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+          }
+          .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+          .brand-logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);
+          }
+          .brand-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.02em;
+          }
+          .brand-sub {
+            font-size: 12px;
+            color: var(--muted);
+          }
+          .sandbox-pill {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            color: #38bdf8;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          }
+          .store-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+          }
+          .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+          }
+          .section-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .product-card {
+            background: rgba(10, 15, 26, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 20px;
+          }
+          .product-img {
+            width: 70px;
+            height: 70px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+          }
+          .product-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+          }
+          .product-desc {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 3px;
+          }
+          .product-price {
+            font-size: 18px;
+            font-weight: 800;
+            color: #34d399;
+            margin-top: 6px;
+          }
+
+          /* Provider Selector Cards */
+          .provider-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+          }
+          .provider-card {
+            background: #090e1a;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .provider-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+          }
+          .provider-card.selected {
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.08);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+          }
+          .provider-name {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 3px;
+          }
+          .provider-tag {
+            font-size: 10px;
+            color: var(--muted);
+          }
+
+          .field-group {
+            margin-bottom: 16px;
+          }
+          .field-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+          }
+          .field-input {
+            width: 100%;
+            background: #090e1a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+          }
+          .field-input:focus {
+            outline: none;
+            border-color: #38bdf8;
+          }
+
+          .order-summary {
+            background: rgba(10, 15, 26, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 24px;
+          }
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px;
+          }
+          .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border);
+          }
+
+          .btn-checkout {
+            width: 100%;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.4);
+            transition: all 0.2s;
+          }
+          .btn-checkout:hover {
+            opacity: 0.94;
+            transform: translateY(-1px);
+          }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <span class="badge">Ethio-Pay Demo Store</span>
-            <h1>Multi-Provider Checkout</h1>
-            <p class="subtitle">Experience unified Ethiopian payments across 6 providers side-by-side.</p>
+        <div class="store-wrapper">
+          <div class="store-header">
+            <div class="brand-box">
+              <div class="brand-logo">☕</div>
+              <div>
+                <div class="brand-name">Habesha Specialty Roasters</div>
+                <div class="brand-sub">Addis Ababa, Ethiopia — Direct Trade Coffee</div>
+              </div>
+            </div>
+            <div class="sandbox-pill">
+              <span>●</span>
+              <span>Ethio-Pay Multi-Rail Gateway Connected</span>
+            </div>
           </div>
 
-          <div class="form-card">
-            <label>Select Payment Provider</label>
-            <div class="provider-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
-              <div id="card-chapa" class="provider-card selected" onclick="selectProvider('chapa')">
-                <div class="provider-title" style="color: #34d399;">Chapa</div>
-                <div class="provider-sub">Cards & Wallets</div>
+          <div class="store-grid">
+            <div class="card">
+              <div class="section-title">🛒 Order Items</div>
+              <div class="product-card">
+                <div class="product-img">☕</div>
+                <div>
+                  <div class="product-title">Yirgacheffe Kochere Grade 1</div>
+                  <div class="product-desc">Whole Bean Roast, 500g bag</div>
+                  <div class="product-price">350.00 ETB</div>
+                </div>
               </div>
-              <div id="card-telebirr" class="provider-card" onclick="selectProvider('telebirr')">
-                <div class="provider-title" style="color: #38bdf8;">Telebirr</div>
-                <div class="provider-sub">Fabric / H5</div>
+
+              <div class="order-summary">
+                <div class="summary-row">
+                  <span>Subtotal</span>
+                  <span>350.00 ETB</span>
+                </div>
+                <div class="summary-row">
+                  <span>Shipping (Addis Ababa)</span>
+                  <span style="color:#34d399;">Free</span>
+                </div>
+                <div class="summary-total">
+                  <span>Total Amount</span>
+                  <span style="color:#34d399;">350.00 ETB</span>
+                </div>
               </div>
-              <div id="card-cbebirr" class="provider-card" onclick="selectProvider('cbebirr')">
-                <div class="provider-title" style="color: #c084fc;">CBE Birr</div>
-                <div class="provider-sub">Direct Bank API</div>
-              </div>
-              <div id="card-arifpay" class="provider-card" onclick="selectProvider('arifpay')">
-                <div class="provider-title" style="color: #818cf8;">ArifPay</div>
-                <div class="provider-sub">Gateway Rail</div>
-              </div>
-              <div id="card-santimpay" class="provider-card" onclick="selectProvider('santimpay')">
-                <div class="provider-title" style="color: #10b981;">SantimPay</div>
-                <div class="provider-sub">Instant Pay</div>
-              </div>
-              <div id="card-awashbirr" class="provider-card" onclick="selectProvider('awashbirr')">
-                <div class="provider-title" style="color: #fb7185;">Awash Birr</div>
-                <div class="provider-sub">Wallet Checkout</div>
+
+              <div style="font-size: 12px; color: var(--muted); line-height: 1.5; background: rgba(10, 15, 26, 0.5); padding: 14px; border-radius: 12px; border: 1px solid var(--border);">
+                🔒 <strong>Zero-Downtime Guarantee:</strong> Powered by Ethio-Pay automated gateway failover. If a bank rail is experiencing network downtime, your checkout seamlessly cascades to backup rails.
               </div>
             </div>
 
-            <div class="field">
-              <label>Amount (ETB)</label>
-              <input type="number" id="amount" value="350" min="1" />
-            </div>
+            <div class="card">
+              <div class="section-title">💳 Select Payment Rail</div>
+              <div class="provider-grid">
+                <div id="card-chapa" class="provider-card selected" onclick="selectProvider('chapa')">
+                  <div class="provider-name" style="color:#34d399;">Chapa</div>
+                  <div class="provider-tag">Cards/Wallets</div>
+                </div>
+                <div id="card-telebirr" class="provider-card" onclick="selectProvider('telebirr')">
+                  <div class="provider-name" style="color:#38bdf8;">Telebirr</div>
+                  <div class="provider-tag">Fabric H5</div>
+                </div>
+                <div id="card-cbebirr" class="provider-card" onclick="selectProvider('cbebirr')">
+                  <div class="provider-name" style="color:#c084fc;">CBE Birr</div>
+                  <div class="provider-tag">Direct Bank</div>
+                </div>
+                <div id="card-arifpay" class="provider-card" onclick="selectProvider('arifpay')">
+                  <div class="provider-name" style="color:#818cf8;">ArifPay</div>
+                  <div class="provider-tag">Gateway Rail</div>
+                </div>
+                <div id="card-santimpay" class="provider-card" onclick="selectProvider('santimpay')">
+                  <div class="provider-name" style="color:#2dd4bf;">SantimPay</div>
+                  <div class="provider-tag">Direct QR</div>
+                </div>
+                <div id="card-awashbirr" class="provider-card" onclick="selectProvider('awashbirr')">
+                  <div class="provider-name" style="color:#fb7185;">Awash Birr</div>
+                  <div class="provider-tag">Awash Wallet</div>
+                </div>
+              </div>
 
-            <div class="field">
-              <label>Customer Name</label>
-              <input type="text" id="customerName" value="Abebe Bikila" />
-            </div>
+              <div class="field-group">
+                <label class="field-label">Customer Name</label>
+                <input type="text" id="custName" class="field-input" value="Abebe Bikila" />
+              </div>
 
-            <div class="field">
-              <label>Phone Number</label>
-              <input type="text" id="phoneNumber" value="0911234567" />
-            </div>
+              <div class="field-group">
+                <label class="field-label">Mobile Phone Number</label>
+                <input type="text" id="custPhone" class="field-input" value="0911234567" />
+              </div>
 
-            <button class="btn-pay" id="payBtn" onclick="initiatePayment()">Proceed to Checkout →</button>
-
-            <div class="meta-info">
-              <strong>Active Webhook Endpoints:</strong><br />
-              • Multi-Rail: <code>POST /api/webhooks/:provider</code> (HMAC / RSA verified)<br />
-              • Idempotency Middleware Active: Duplicate prevention enabled<br />
-              • Automatic Failover: Configured with candidate backup gateways
+              <button class="btn-checkout" id="payBtn" onclick="checkout()">Pay 350.00 ETB with Chapa →</button>
             </div>
           </div>
         </div>
@@ -417,28 +659,28 @@ app.get('/', (_req: Request, res: Response) => {
         <script>
           let currentProvider = 'chapa';
           const providers = ['chapa', 'telebirr', 'cbebirr', 'arifpay', 'santimpay', 'awashbirr'];
+          const names = {
+            chapa: 'Chapa',
+            telebirr: 'Telebirr',
+            cbebirr: 'CBE Birr',
+            arifpay: 'ArifPay',
+            santimpay: 'SantimPay',
+            awashbirr: 'Awash Birr'
+          };
 
-          function selectProvider(provider) {
-            currentProvider = provider;
-            providers.forEach(p => {
-              const el = document.getElementById('card-' + p);
-              if (el) el.classList.toggle('selected', p === provider);
+          function selectProvider(p) {
+            currentProvider = p;
+            providers.forEach(k => {
+              const el = document.getElementById('card-' + k);
+              if (el) el.classList.toggle('selected', k === p);
             });
-            const names = {
-              chapa: 'Chapa',
-              telebirr: 'Telebirr',
-              cbebirr: 'CBE Birr',
-              arifpay: 'ArifPay',
-              santimpay: 'SantimPay',
-              awashbirr: 'Awash Birr'
-            };
-            document.getElementById('payBtn').innerText = 'Pay with ' + (names[provider] || provider) + ' →';
+            document.getElementById('payBtn').innerText = 'Pay 350.00 ETB with ' + (names[p] || p) + ' →';
           }
 
-          async function initiatePayment() {
+          async function checkout() {
             const btn = document.getElementById('payBtn');
             btn.disabled = true;
-            btn.innerText = 'Initializing Payment Session...';
+            btn.innerText = 'Initializing Checkout Session...';
 
             try {
               const res = await fetch('/api/checkout', {
@@ -446,10 +688,10 @@ app.get('/', (_req: Request, res: Response) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   provider: currentProvider,
-                  amount: Number(document.getElementById('amount').value),
+                  amount: 350,
                   customer: {
-                    name: document.getElementById('customerName').value,
-                    phoneNumber: document.getElementById('phoneNumber').value,
+                    name: document.getElementById('custName').value,
+                    phoneNumber: document.getElementById('custPhone').value,
                     email: 'customer@example.com'
                   }
                 })
@@ -458,7 +700,7 @@ app.get('/', (_req: Request, res: Response) => {
               if (data.checkoutUrl) {
                 window.location.href = data.checkoutUrl;
               } else {
-                alert('Error initializing checkout: ' + (data.message || 'Unknown error'));
+                alert('Checkout Error: ' + (data.message || 'Unknown error'));
                 btn.disabled = false;
                 selectProvider(currentProvider);
               }

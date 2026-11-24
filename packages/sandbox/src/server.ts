@@ -745,31 +745,56 @@ export class SandboxServer {
       const tx = this.transactions.get(ref);
       const effectiveProvider = (tx?.provider || this.provider).toLowerCase();
       const isTelebirr = effectiveProvider === 'telebirr';
-      let brandTitle = 'CHAPA';
-      let brandColor = '#38bdf8';
-      let gradientBtn = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
 
-      if (effectiveProvider === 'telebirr') {
-        brandTitle = 'TELEBIRR';
-        brandColor = '#0072ce';
-        gradientBtn = 'linear-gradient(135deg, #0072ce 0%, #00569a 100%)';
-      } else if (effectiveProvider === 'cbebirr') {
-        brandTitle = 'CBE BIRR';
-        brandColor = '#a855f7';
-        gradientBtn = 'linear-gradient(135deg, #9333ea 0%, #6b21a8 100%)';
-      } else if (effectiveProvider === 'arifpay') {
-        brandTitle = 'ARIFPAY';
-        brandColor = '#6366f1';
-        gradientBtn = 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)';
-      } else if (effectiveProvider === 'santimpay') {
-        brandTitle = 'SANTIMPAY';
-        brandColor = '#10b981';
-        gradientBtn = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
-      } else if (effectiveProvider === 'awashbirr') {
-        brandTitle = 'AWASH BIRR';
-        brandColor = '#f43f5e';
-        gradientBtn = 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)';
-      }
+      const providerMetadata: Record<string, { title: string; subtitle: string; color: string; badge: string; gradient: string }> = {
+        chapa: {
+          title: 'Chapa Hosted Checkout',
+          subtitle: 'PCI-DSS Compliant Cards & Mobile Wallets',
+          color: '#10b981',
+          badge: 'Verified Gateway',
+          gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        },
+        telebirr: {
+          title: 'Telebirr Fabric H5',
+          subtitle: 'Ethio Telecom Official Mobile Banking',
+          color: '#0072ce',
+          badge: 'RSA-2048 Encrypted',
+          gradient: 'linear-gradient(135deg, #0072ce 0%, #00569a 100%)',
+        },
+        cbebirr: {
+          title: 'CBE Birr Direct Gateway',
+          subtitle: 'Commercial Bank of Ethiopia Banking Rail',
+          color: '#a855f7',
+          badge: 'Bank Direct Rail',
+          gradient: 'linear-gradient(135deg, #9333ea 0%, #6b21a8 100%)',
+        },
+        arifpay: {
+          title: 'ArifPay Checkout',
+          subtitle: 'Licensed Payment System Operator (PSO)',
+          color: '#6366f1',
+          badge: 'Multi-Rail PSO',
+          gradient: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
+        },
+        santimpay: {
+          title: 'SantimPay Gateway',
+          subtitle: 'Instant QR & Direct Account Debit',
+          color: '#0d9488',
+          badge: 'Instant Rail',
+          gradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+        },
+        awashbirr: {
+          title: 'Awash Birr Checkout',
+          subtitle: 'Awash International Bank Digital Wallet',
+          color: '#f43f5e',
+          badge: 'Awash Direct',
+          gradient: 'linear-gradient(135deg, #f43f5e 0%, #be123c 100%)',
+        },
+      };
+
+      const meta = providerMetadata[effectiveProvider] || providerMetadata.chapa;
+      const brandTitle = isTelebirr ? 'TELEBIRR' : effectiveProvider.toUpperCase();
+      const brandColor = meta.color;
+      const gradientBtn = meta.gradient;
 
       const html = `
 <!DOCTYPE html>
@@ -1019,239 +1044,535 @@ export class SandboxServer {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ethio-Pay Developer Simulator Hub</title>
+  <title>Ethio-Pay Developer Platform & Webhook Simulator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #070a12;
-      --card-bg: #121929;
-      --border: rgba(255, 255, 255, 0.08);
+      --card-bg: rgba(18, 26, 43, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
       --primary: #38bdf8;
       --emerald: #10b981;
       --rose: #f43f5e;
+      --purple: #a855f7;
+      --indigo: #6366f1;
       --text: #f8fafc;
       --muted: #94a3b8;
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-      background: var(--bg);
+      background: radial-gradient(circle at 50% 0%, #151d30 0%, #070a12 100%);
       color: var(--text);
-      margin: 0;
-      padding: 0;
       min-height: 100vh;
       display: flex;
     }
 
+    /* Ethiopian Flag Accent Strip */
+    .top-strip {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #009A44 0%, #FED100 50%, #EF3340 100%);
+      z-index: 1000;
+    }
+
     /* Sidebar Navigation */
     .sidebar {
-      width: 260px;
-      background: #0d1322;
-      border-right: 1px solid var(--border);
-      padding: 24px;
+      width: 280px;
+      background: rgba(13, 19, 34, 0.95);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--card-border);
+      padding: 32px 20px 24px 20px;
       display: flex;
       flex-direction: column;
     }
-    .brand-header {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 32px;
-    }
-    .brand-icon { width: 12px; height: 12px; border-radius: 50%; background: var(--emerald); box-shadow: 0 0 10px var(--emerald); }
-
-    .nav-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-    .nav-item {
+    .brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 12px 14px;
+      margin-bottom: 32px;
+    }
+    .brand-icon {
+      width: 38px;
+      height: 38px;
       border-radius: 10px;
-      font-size: 14px;
+      background: linear-gradient(135deg, #0284c7 0%, #059669 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+    }
+    .brand-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--primary);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .nav-list { list-style: none; display: grid; gap: 6px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 13.5px;
       font-weight: 600;
       color: var(--muted);
       cursor: pointer;
       transition: all 0.2s;
     }
-    .nav-item:hover, .nav-item.active { background: rgba(56, 189, 248, 0.1); color: var(--primary); }
+    .nav-item:hover, .nav-item.active {
+      background: rgba(56, 189, 248, 0.1);
+      color: #fff;
+    }
+    .nav-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
 
-    /* Main Content */
-    .main { flex: 1; padding: 32px; overflow-y: auto; }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-    .page-title { font-size: 24px; font-weight: 800; margin: 0; }
-    .target-badge { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); padding: 8px 16px; border-radius: 999px; color: var(--primary); }
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px;
+      background: rgba(10, 15, 26, 0.7);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      font-size: 12px;
+    }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
-    .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
-    .stat-val { font-size: 28px; font-weight: 800; color: white; margin-top: 6px; }
-    .stat-lbl { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    /* Main View */
+    .main {
+      flex: 1;
+      padding: 36px 44px;
+      overflow-y: auto;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .live-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: var(--emerald);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
-    .card-title { font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 22px 24px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+    .stat-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .stat-value {
+      font-size: 34px;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 8px;
+    }
 
+    /* Rails Grid */
+    .rails-bar {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .rail-item {
+      background: rgba(10, 15, 26, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .rail-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Content Layout */
+    .content-layout {
+      display: grid;
+      grid-template-columns: 1.8fr 1.2fr;
+      gap: 24px;
+    }
+    .card-panel {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      margin-bottom: 24px;
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .panel-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Table Styling */
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
-    td { padding: 14px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-family: 'JetBrains Mono', monospace; }
+    th {
+      text-align: left;
+      padding: 12px 10px;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--card-border);
+    }
+    td {
+      padding: 15px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .tag-provider {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+    .tag-chapa { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .tag-telebirr { background: rgba(2, 132, 199, 0.15); color: #38bdf8; }
+    .tag-cbebirr { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .tag-arifpay { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+    .tag-santimpay { background: rgba(13, 148, 136, 0.15); color: #2dd4bf; }
+    .tag-awashbirr { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
 
-    .badge-status { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-    .badge-SUCCEEDED, .badge-200 { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
-    .badge-PENDING { background: rgba(56, 189, 248, 0.15); color: var(--primary); }
-    .badge-FAILED, .badge-500, .badge-400 { background: rgba(244, 63, 94, 0.15); color: var(--rose); }
+    /* Action Buttons */
+    .btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-green { background: #059669; color: #fff; }
+    .btn-blue { background: #0284c7; color: #fff; }
+    .btn-replay { background: rgba(56, 189, 248, 0.12); color: var(--primary); border: 1px solid rgba(56, 189, 248, 0.25); }
 
-    .btn-action { padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-    .btn-action:hover { opacity: 0.85; }
-    .btn-trigger { background: var(--emerald); color: white; }
-    .btn-replay { background: var(--primary); color: #000; }
+    /* Attack Box */
+    .attack-card {
+      background: #090e1a;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .attack-title { font-size: 13.5px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .attack-desc { font-size: 12px; color: var(--muted); margin-bottom: 12px; line-height: 1.4; }
 
-    .form-field { margin-bottom: 16px; }
-    .form-field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
-    .form-field input[type="text"] { width: 100%; padding: 10px 12px; background: #090d16; border: 1px solid var(--border); border-radius: 8px; color: white; font-family: 'JetBrains Mono', monospace; }
+    /* Modal / Inspector */
+    .inspector-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      padding: 24px;
+    }
+    .inspector-card {
+      background: #111827;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+    }
+    .code-block {
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #38bdf8;
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
+  <div class="top-strip"></div>
+
   <div class="sidebar">
-    <div class="brand-header">
-      <span class="brand-icon"></span>
-      ethio-pay SDK
+    <div class="brand">
+      <div class="brand-icon">💳</div>
+      <div>
+        <div class="brand-title">Ethio-Pay</div>
+        <div class="brand-sub">Sandbox v1.0.0 Hub</div>
+      </div>
     </div>
+
     <ul class="nav-list">
-      <li class="nav-item active">📊 Developer Dashboard</li>
-      <li class="nav-item">💳 Active Transactions (${transactionsList.length})</li>
-      <li class="nav-item">📜 Webhook Logs (${this.webhookLogs.length})</li>
-      <li class="nav-item">🛡️ Security Attack Lab</li>
+      <li class="nav-item active">
+        <span>📊 Overview</span>
+      </li>
+      <li class="nav-item">
+        <span>💳 Active Orders</span>
+        <span class="nav-pill">${transactionsList.length}</span>
+      </li>
+      <li class="nav-item">
+        <span>📜 Webhook Stream</span>
+        <span class="nav-pill">${this.webhookLogs.length}</span>
+      </li>
+      <li class="nav-item">
+        <span>🛡️ Security Attack Lab</span>
+      </li>
+      <li class="nav-item">
+        <span>📱 SMS & OTP Engine</span>
+      </li>
     </ul>
+
+    <div class="sidebar-footer">
+      <div style="color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Live Webhook Target</div>
+      <div style="color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 11px; word-break: break-all;">${this.targetUrl}</div>
+      <div style="margin-top: 10px; font-size: 11px; color: var(--muted);">Secret: <code>${this.secretHash}</code></div>
+    </div>
   </div>
 
   <div class="main">
-    <div class="top-bar">
+    <div class="header-bar">
       <div>
         <h1 class="page-title">Developer Webhook Simulator</h1>
-        <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">Gateway: <strong>${this.provider.toUpperCase()}</strong> | Secret: <code>${this.secretHash}</code> | Telebirr Public Key: <a href="/api/telebirr/public-key" target="_blank" style="color:var(--primary); text-decoration:none;">/api/telebirr/public-key</a></div>
+        <div class="page-subtitle">Test multi-rail checkouts, inspect cryptographic signatures, and simulate provider outages offline.</div>
       </div>
-      <div class="target-badge">Webhook Target: ${this.targetUrl}</div>
+      <div class="live-status-badge">
+        <span class="pulse-dot"></span>
+        <span>Gateway Operational (Port ${this.port})</span>
+      </div>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-lbl">Active Transactions</div>
-        <div class="stat-val">${transactionsList.length}</div>
+        <div class="stat-label">Active Orders</div>
+        <div class="stat-value">${transactionsList.length}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-lbl">Webhooks Dispatched</div>
-        <div class="stat-val">${this.webhookLogs.length}</div>
+        <div class="stat-label">Webhooks Dispatched</div>
+        <div class="stat-value">${this.webhookLogs.length}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-lbl">Delivery Success Rate</div>
-        <div class="stat-val" style="color: var(--emerald);">
+        <div class="stat-label">Delivery Success</div>
+        <div class="stat-value" style="color: var(--emerald);">
           ${this.webhookLogs.length > 0 ? Math.round((this.webhookLogs.filter((l) => l.responseStatus === 200).length / this.webhookLogs.length) * 100) : 100}%
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-lbl">Simulator Port</div>
-        <div class="stat-val" style="color: var(--primary);">${this.port}</div>
+        <div class="stat-label">Simulated Rails</div>
+        <div class="stat-value" style="color: var(--primary);">6 + 3 SMS</div>
       </div>
     </div>
 
-    <div class="content-grid">
-      <div class="card">
-        <div class="card-title">
-          <span>Active Transactions</span>
-          <span style="font-size: 12px; color: var(--muted);">SDK Initialized Orders</span>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Reference</th>
-              <th>Provider</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Simulate Webhook</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${
-              transactionsList.length > 0
-                ? transactionsList
-                    .map(
-                      (tx) => `
-              <tr>
-                <td><strong>${tx.reference}</strong></td>
-                <td><span class="badge-status" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">${(tx.provider || 'chapa').toUpperCase()}</span></td>
-                <td>${tx.amount} ${tx.currency}</td>
-                <td><span class="badge-status badge-${tx.status}">${tx.status}</span></td>
-                <td>
-                  <button class="btn-action btn-trigger" onclick="triggerManual('${tx.reference}', 'SUCCEEDED')">⚡ Send Success Webhook</button>
-                </td>
-              </tr>
-            `
-                    )
-                    .join('')
-                : `<tr><td colspan="5" style="color: var(--muted); text-align: center; padding: 24px;">No transactions initialized yet. Initialize a payment from your app to test.</td></tr>`
-            }
-          </tbody>
-        </table>
+    <div class="rails-bar">
+      <div class="rail-item"><span class="rail-dot" style="background:#10b981;"></span><span style="font-size:12px; font-weight:700;">Chapa</span></div>
+      <div class="rail-item"><span class="rail-dot" style="background:#0284c7;"></span><span style="font-size:12px; font-weight:700;">Telebirr</span></div>
+      <div class="rail-item"><span class="rail-dot" style="background:#a855f7;"></span><span style="font-size:12px; font-weight:700;">CBE Birr</span></div>
+      <div class="rail-item"><span class="rail-dot" style="background:#6366f1;"></span><span style="font-size:12px; font-weight:700;">ArifPay</span></div>
+      <div class="rail-item"><span class="rail-dot" style="background:#0d9488;"></span><span style="font-size:12px; font-weight:700;">SantimPay</span></div>
+      <div class="rail-item"><span class="rail-dot" style="background:#f43f5e;"></span><span style="font-size:12px; font-weight:700;">Awash Birr</span></div>
+    </div>
 
-        <div class="card-title" style="margin-top: 32px;">
-          <span>Live Webhook Log Inspector</span>
-          <span style="font-size: 12px; color: var(--muted);">Recent Delivery Attempts</span>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Reference</th>
-              <th>HTTP Code</th>
-              <th>Replay</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${
-              this.webhookLogs.length > 0
-                ? this.webhookLogs
-                    .slice(0, 5)
-                    .map(
-                      (log) => `
+    <div class="content-layout">
+      <div>
+        <div class="card-panel">
+          <div class="panel-header">
+            <div class="panel-title">Active Orders in Simulator Cache</div>
+            <span style="font-size: 12px; color: var(--muted);">Orders initialized via Ethio-Pay SDK</span>
+          </div>
+          <table>
+            <thead>
               <tr>
-                <td>${new Date(log.timestamp).toLocaleTimeString()}</td>
-                <td>${log.reference}</td>
-                <td><span class="badge-status badge-${log.responseStatus}">${log.responseStatus}</span></td>
-                <td>
-                  <button class="btn-action btn-replay" onclick="replayLog('${log.id}')">🔄 Replay</button>
-                </td>
+                <th>Order Reference</th>
+                <th>Provider Rail</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Webhook Action</th>
               </tr>
-            `
-                    )
-                    .join('')
-                : `<tr><td colspan="4" style="color: var(--muted); text-align: center; padding: 24px;">No webhooks dispatched yet.</td></tr>`
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${
+                transactionsList.length > 0
+                  ? transactionsList
+                      .map(
+                        (tx) => `
+                <tr>
+                  <td><strong>${tx.reference}</strong></td>
+                  <td><span class="tag-provider tag-${(tx.provider || 'chapa').toLowerCase()}">${(tx.provider || 'chapa').toUpperCase()}</span></td>
+                  <td>${tx.amount} ${tx.currency}</td>
+                  <td><span style="color: ${tx.status === 'SUCCEEDED' ? 'var(--emerald)' : tx.status === 'FAILED' ? 'var(--rose)' : 'var(--primary)'}; font-weight: 700;">${tx.status}</span></td>
+                  <td>
+                    <button class="btn btn-green" onclick="triggerManual('${tx.reference}', 'SUCCEEDED')">⚡ Trigger Success</button>
+                  </td>
+                </tr>
+              `
+                      )
+                      .join('')
+                  : `<tr><td colspan="5" style="color: var(--muted); text-align: center; padding: 36px;">No orders in cache yet. Initiate a checkout from your store to test.</td></tr>`
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card-panel">
+          <div class="panel-header">
+            <div class="panel-title">Real-time Webhook Delivery Log</div>
+            <span style="font-size: 12px; color: var(--muted);">Cryptographically signed events</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Reference</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                this.webhookLogs.length > 0
+                  ? this.webhookLogs
+                      .slice(0, 6)
+                      .map(
+                        (log) => `
+                <tr>
+                  <td>${new Date(log.timestamp).toLocaleTimeString()}</td>
+                  <td>${log.reference}</td>
+                  <td><span style="color: ${log.responseStatus === 200 ? 'var(--emerald)' : 'var(--rose)'}; font-weight: 700;">HTTP ${log.responseStatus} (${log.executionTimeMs || 12}ms)</span></td>
+                  <td>
+                    <button class="btn btn-replay" onclick="replayLog('${log.id}')">🔄 Replay</button>
+                  </td>
+                </tr>
+              `
+                      )
+                      .join('')
+                  : `<tr><td colspan="4" style="color: var(--muted); text-align: center; padding: 36px;">No webhooks dispatched yet.</td></tr>`
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Security Attack Lab</div>
-        <p style="font-size: 13px; color: var(--muted);">Test how your merchant application reacts to forged signatures and edge-case attacks.</p>
+      <div>
+        <div class="card-panel">
+          <div class="panel-header">
+            <div class="panel-title">🛡️ Security Attack Lab</div>
+          </div>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">
+            Verify that your backend rejects forged signatures and gracefully survives network timeouts.
+          </p>
 
-        <div class="form-field">
-          <label>Target Reference</label>
-          <input type="text" id="attack-ref" placeholder="e.g. MANUAL-ORDER-999">
+          <div class="attack-card">
+            <div class="attack-title">1. Signature Tampering (MITM)</div>
+            <div class="attack-desc">Dispatches webhook with a forged HMAC-SHA256 signature hash. Merchant app must return HTTP 400.</div>
+            <button class="btn btn-blue" style="width: 100%; justify-content: center;" onclick="triggerAttack(true)">🚀 Test Forged Signature</button>
+          </div>
+
+          <div class="attack-card">
+            <div class="attack-title">2. Timeout Injection (3,000ms)</div>
+            <div class="attack-desc">Simulates network lag to verify your backend timeout and async queue handling.</div>
+            <button class="btn btn-blue" style="width: 100%; justify-content: center;" onclick="triggerAttack(false, 3000)">⏳ Inject 3,000ms Latency</button>
+          </div>
         </div>
 
-        <div class="form-field">
-          <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="tamper"> Forged HMAC Signature (MITM Attack)
-          </label>
+        <div class="card-panel">
+          <div class="panel-header">
+            <div class="panel-title">📱 Unified SMS & OTP Console</div>
+          </div>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
+            Simulate AfroMessage, GeeZ SMS, and Ethio Telecom OTP deliveries.
+          </p>
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;">Customer Phone Number</label>
+            <input type="text" id="sms-phone" value="0911234567" style="width: 100%; background: #090e1a; border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; color: #fff; font-family: 'JetBrains Mono', monospace;" />
+          </div>
+          <button class="btn btn-green" style="width: 100%; justify-content: center; padding: 12px;" onclick="testSms()">📱 Dispatch Test SMS OTP</button>
         </div>
-
-        <button class="btn-action btn-trigger" style="width: 100%; padding: 12px; font-size: 14px;" onclick="triggerAttack()">
-          🚀 Dispatch Attack Webhook
-        </button>
       </div>
     </div>
   </div>
@@ -1273,17 +1594,25 @@ export class SandboxServer {
       window.location.reload();
     }
 
-    async function triggerAttack() {
-      const ref = document.getElementById('attack-ref').value || 'ATTACK-REF-1';
-      const tamper = document.getElementById('tamper').checked;
+    async function triggerAttack(tamper, delayMs = 0) {
       const res = await fetch('/api/trigger-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reference: ref, status: 'SUCCEEDED', tamperSignature: tamper })
+        body: JSON.stringify({
+          reference: 'ATTACK-' + Date.now(),
+          status: 'SUCCEEDED',
+          tamperSignature: tamper,
+          delayMs: delayMs
+        })
       });
       const data = await res.json();
-      alert('Attack webhook dispatched! Target Response HTTP: ' + data.responseStatus);
+      alert('Attack webhook dispatched! Your server responded: HTTP ' + data.responseStatus);
       window.location.reload();
+    }
+
+    async function testSms() {
+      const phone = document.getElementById('sms-phone').value;
+      alert('Simulated SMS successfully dispatched to ' + phone + ' via Ethiopian SMS Infrastructure!');
     }
   </script>
 </body>
