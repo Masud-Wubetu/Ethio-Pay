@@ -1,15 +1,16 @@
-name: Release Beta
+name: Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
-    name: Publish to NPM (Beta)
+    name: Build, Verify & Publish to NPM
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -33,10 +34,16 @@ jobs:
       - name: Build Packages
         run: pnpm build
 
+      - name: Run Linter
+        run: pnpm run lint
+
+      - name: Run Typecheck
+        run: pnpm --recursive run typecheck
+
       - name: Run Tests
         run: pnpm test
 
-      - name: Publish Beta Packages
-        run: pnpm publish -r --tag beta --no-git-checks
+      - name: Publish Packages to NPM
+        run: pnpm publish -r --tag latest --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

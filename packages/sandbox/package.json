@@ -1,6 +1,6 @@
 {
   "name": "@ethio-pay/sandbox",
-  "version": "0.1.0-beta.0",
+  "version": "1.0.0",
   "description": "Local webhook simulator and payment provider sandbox CLI for Ethio-Pay",
   "type": "module",
   "license": "MIT",
@@ -61,4 +61,3 @@
     "node": ">=20.0.0"
   }
 }
-

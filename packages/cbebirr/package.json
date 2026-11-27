@@ -1,6 +1,6 @@
 {
   "name": "@ethio-pay/cbebirr",
-  "version": "0.1.0-beta.0",
+  "version": "1.0.0",
   "description": "CBE Birr payment provider adapter for Ethio-Pay SDK",
   "type": "module",
   "license": "MIT",
@@ -52,4 +52,3 @@
     "node": ">=20.0.0"
   }
 }
-

@@ -1,6 +1,6 @@
 {
   "name": "@ethio-pay/sms",
-  "version": "0.1.0-beta.0",
+  "version": "1.0.0",
   "description": "Unified Ethiopian SMS & OTP delivery engine with automated gateway cascading (AfroMessage, GeeZ SMS, Ethio Telecom)",
   "type": "module",
   "license": "MIT",
@@ -54,4 +54,3 @@
     "node": ">=20.0.0"
   }
 }
-

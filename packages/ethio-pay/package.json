@@ -1,7 +1,7 @@
 {
   "name": "ethio-pay",
-  "version": "0.1.0-beta.0",
-  "description": "Unified Payment SDK and Webhook Simulator for Ethiopian payment providers (Chapa, Telebirr, CBE Birr)",
+  "version": "1.0.0",
+  "description": "Unified Payment SDK, Zero-Downtime Failover, and SMS/OTP Infrastructure for Ethiopian commerce (Chapa, Telebirr, CBE Birr, ArifPay, SantimPay, Awash Birr)",
   "type": "module",
   "license": "MIT",
   "repository": {

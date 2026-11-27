@@ -1,6 +1,6 @@
 {
   "name": "@ethio-pay/arifpay",
-  "version": "0.1.0-beta.0",
+  "version": "1.0.0",
   "description": "ArifPay payment provider adapter for Ethio-Pay SDK",
   "type": "module",
   "license": "MIT",
@@ -50,4 +50,3 @@
     "node": ">=20.0.0"
   }
 }
-
